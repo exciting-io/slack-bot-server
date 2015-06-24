@@ -10,6 +10,11 @@ RSpec.describe SlackBotServer::Bot do
     allow(slack_api).to receive(:post).with('rtm.start').and_return({'url' => 'ws://example.dev/slack'})
   end
 
+  it "raises an exception if the token was rejected by slack" do
+    allow(slack_api).to receive(:auth_test).and_return({'ok' => false})
+    expect { bot_instance }.to raise_error(SlackBotServer::Bot::InvalidToken)
+  end
+
   it "allows setting the default username" do
     bot = bot_instance do
       username 'TestBot'
