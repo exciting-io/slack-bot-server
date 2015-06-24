@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-# RSpec.describe SlackBotServer::SimpleBot do
+RSpec.describe SlackBotServer::SimpleBot do
 #   it "responds with the name 'SimpleBot'" do
 #     expect(subject).to respond_to_messages_with(username: 'SimpleBot')
 #   end
@@ -9,4 +9,4 @@ require 'spec_helper'
 #     expect(subject).to
 #   end
 #   it "responds when it is mentioned"
-# end
+end

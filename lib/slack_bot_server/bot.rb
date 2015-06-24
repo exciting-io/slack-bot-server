@@ -14,18 +14,15 @@ class SlackBotServer::Bot
   end
 
   def say(options)
-    options.symbolize_keys!
     @api.chat_postMessage(default_message_options.merge(options))
   end
 
   def reply(options)
-    options.symbolize_keys!
     channel = @last_received_data['channel']
     @api.chat_postMessage(default_message_options.merge(options.merge(channel: channel)))
   end
 
   def say_to(user_id, options)
-    options.symbolize_keys!
     result = @api.im_open(user: user_id)
     channel_id = result['channel']['id']
     say(options.merge(channel: channel_id))
@@ -46,16 +43,8 @@ class SlackBotServer::Bot
 
     @ws.on :message do |event|
       begin
-        data = JSON.parse(event.data)
-        debug data
-        if data["type"]
-          callbacks = self.class.callbacks(data["type"])
-          if callbacks && callbacks.any?
-            callbacks.each do |c|
-              instance_exec(data, &c)
-            end
-          end
-        end
+        debug event
+        handle_message(event)
       rescue => e
         log error: e
       end
@@ -73,10 +62,6 @@ class SlackBotServer::Bot
   end
 
   class << self
-    def callbacks(type)
-      @callbacks[type.to_sym]
-    end
-
     def username(name)
       default_message_options[:username] = name
     end
@@ -86,7 +71,15 @@ class SlackBotServer::Bot
     end
 
     def default_message_options
-      @default_message_options ||= {}
+      @default_message_options ||= {channel: '#general'}
+    end
+
+    def callbacks_for(type)
+      callbacks = @callbacks[type.to_sym] || []
+      if superclass.respond_to?(:callbacks_for)
+        callbacks += superclass.callbacks_for(type)
+      end
+      callbacks
     end
 
     def on(type, &block)
@@ -129,6 +122,18 @@ class SlackBotServer::Bot
 
   private
 
+  def handle_message(event)
+    data = MultiJson.load(event.data)
+    if data["type"]
+      relevant_callbacks = self.class.callbacks_for(data["type"])
+      if relevant_callbacks && relevant_callbacks.any?
+        relevant_callbacks.each do |c|
+          instance_exec(data, &c)
+        end
+      end
+    end
+  end
+
   def log(message)
     text = message.is_a?(String) ? message : message.inspect
     text = "[BOT/#{user}] #{text}"
@@ -139,10 +144,6 @@ class SlackBotServer::Bot
     text = message.is_a?(String) ? message : message.inspect
     text = "[BOT/#{user}] #{text}"
     SlackBotServer.logger.debug(message)
-  end
-
-  def default_message_options
-    {channel: '#general'}
   end
 
   def user
