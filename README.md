@@ -121,6 +121,10 @@ end
 server.start
 ```
 
+### Getting bots to talk
+
+Up to this point, your bots could only respond to mentions and IM messages, but it's often useful to be able to externally trigger a bot into making an announcement.
+
 ## Development
 
 After checking out the repo, run `bundle` to install dependencies. Then, run `rake rspec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment. Run `bundle exec slack_bot_server` to use the gem in this directory, ignoring other installed copies of this gem.

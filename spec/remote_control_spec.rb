@@ -3,7 +3,7 @@ require 'slack_bot_server/remote_control'
 
 RSpec.describe SlackBotServer::RemoteControl do
   let(:queue) { double('queue') }
-  subject { described_class.new(queue) }
+  subject { described_class.new(queue: queue) }
   let(:token) { 'some-slack-api-token' }
   let(:key) { 'local-unique-key'}
 

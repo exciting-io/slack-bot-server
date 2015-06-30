@@ -5,7 +5,7 @@
 # redis queue instance that points at the same redis server).
 
 class SlackBotServer::RemoteControl
-  def initialize(queue)
+  def initialize(queue: queue)
     @queue = queue
   end
 
