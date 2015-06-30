@@ -121,9 +121,39 @@ end
 server.start
 ```
 
+### Managing bots
+
+When someone in your application wspants to connect their account with Slack, they'll need to provide a bot API token, which your application should store.
+
+In order to actually create and connect their bot, you can use the remote
+control to add the token to the server.
+
+```ruby
+# Somewhere within your application
+queue = SlackBotServer::RedisQueue.new(Redis.new)
+slack_remote = SlackBotServer::RemoteControl.new(queue: queue)
+slack_remote.add_token('user-accounts-slack-api-token')
+```
+
+This will queue the token to be added by the server, using the `on_new_token` block provided in the server script.
+
+When a bot is created and added within the server, it is stored using a key, which the bot class itself can define, but defaults to the slack api token used to instantiate the bot.
+
+Similarly, if a user disables their Slack integration, we should remove the bot. To remove a bot, call the `remove_bot` method on the remote using the key for the appropriate bot:
+
+```ruby
+slack_remote.remove_bot('bot-key-which-is-normally-the-slack-api-token')
+```
+
 ### Getting bots to talk
 
 Up to this point, your bots could only respond to mentions and IM messages, but it's often useful to be able to externally trigger a bot into making an announcement.
+
+We can tell a bot to send a message into its default room fairly simply using the remote:
+
+```ruby
+slack_remote.say('bot-key', text: 'I have an important announcement to make!')
+```
 
 ## Development
 
