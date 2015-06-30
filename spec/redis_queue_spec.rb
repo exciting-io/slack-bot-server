@@ -5,6 +5,13 @@ RSpec.describe SlackBotServer::RedisQueue do
   let(:redis) { double('redis') }
   subject { described_class.new(redis) }
 
+  it "will default to the default Redis connection if none is given" do
+    redis_class = Class.new
+    stub_const("Redis", redis_class)
+    expect(redis_class).to receive(:new).and_return(redis)
+    described_class.new()
+  end
+
   describe "#push" do
     it "pushes json value onto the right of the list" do
       object = Object.new

@@ -35,7 +35,7 @@ require 'slack_bot_server/simple_bot'
 
 # Use a Redis-based queue to add/remove bots and to trigger
 # bot messages to be sent
-queue = SlackBotServer::RedisQueue.new(Redis.new)
+queue = SlackBotServer::RedisQueue.new
 
 # Create a new server using that queue
 server = SlackBotServer::Server.new(queue: queue)
