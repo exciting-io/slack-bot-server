@@ -1,6 +1,6 @@
 # SlackBotServer
 
-[![Build Status](https://travis-ci.org/lazyatom/slack-bot-server.svg)](https://travis-ci.org/lazyatom/slack-bot-server)
+[![Build Status](https://travis-ci.org/exciting-io/slack-bot-server.svg)](https://travis-ci.org/exciting-io/slack-bot-server)
 
 If you're building an integration just for yourself, running a single bot isn't too hard and there are plenty of examples available. However, if you're building an integration for your *product* to connect with multiple teams, running multiple instances of that bot is a bit trickier.
 
