@@ -1,14 +1,13 @@
 require 'slack'
-require 'securerandom'
 
 class SlackBotServer::Bot
   attr_reader :key
 
   class InvalidToken < RuntimeError; end
 
-  def initialize(token:, key: SecureRandom.uuid)
+  def initialize(token:, key: nil)
     @token = token
-    @key = key
+    @key = key || @token
     @api = ::Slack::Client.new(token: @token)
     @im_channel_ids = []
 

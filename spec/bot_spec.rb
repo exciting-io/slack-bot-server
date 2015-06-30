@@ -46,6 +46,13 @@ RSpec.describe SlackBotServer::Bot do
     bot.stop
   end
 
+  it 'defaults the key to equal the token' do
+    token = 'slack-api-token'
+    bot_class = Class.new(described_class)
+    bot = bot_class.new(token: token)
+    expect(bot.key).to eq token
+  end
+
   describe 'handling events from Slack' do
     let(:check) { double('check') }
 
