@@ -77,6 +77,10 @@ class SlackBotServer::Server
     when :remove_bot
       key = args.first
       remove_bot(key)
+    when :say
+      key, message_data = args
+      bot = bot(key)
+      bot.say(message_data)
     when :call
       key, method, method_args = args
       bot = bot(key)
