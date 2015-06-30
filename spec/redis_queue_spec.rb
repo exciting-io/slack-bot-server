@@ -34,7 +34,7 @@ RSpec.describe SlackBotServer::RedisQueue do
     context "when queue has an item" do
       it "returns JSON-decoded object" do
         object = Object.new
-        allow(MultiJson).to receive(:load).with('json-value').and_return(object)
+        allow(MultiJson).to receive(:load).with('json-value', symbolize_keys: true).and_return(object)
         expect(redis).to receive(:lpop).with(queue_key).and_return('json-value')
 
         expect(subject.pop).to eq object

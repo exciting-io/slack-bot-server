@@ -18,7 +18,7 @@ class SlackBotServer::RedisQueue
   def pop
     json_value = @redis.lpop @key
     if json_value
-      MultiJson.load(json_value)
+      MultiJson.load(json_value, symbolize_keys: true)
     else
       nil
     end
