@@ -71,6 +71,10 @@ class SlackBotServer::Bot
       default_message_options[:icon_url] = url
     end
 
+    def channel(channel)
+      default_message_options[:channel] = channel
+    end
+
     def default_message_options
       @default_message_options ||= {channel: '#general'}
     end

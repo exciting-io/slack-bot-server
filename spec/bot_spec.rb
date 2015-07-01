@@ -33,6 +33,15 @@ RSpec.describe SlackBotServer::Bot do
     bot.say text: 'hello'
   end
 
+  it "allows setting the default channel" do
+    bot = bot_instance do
+      channel '#random'
+    end
+    expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: '#random'))
+
+    bot.say text: 'hello'
+  end
+
   it "sends messages to the #general channel by default" do
     bot = bot_instance
     expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: '#general'))
