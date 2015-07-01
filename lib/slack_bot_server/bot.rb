@@ -63,6 +63,8 @@ class SlackBotServer::Bot
   end
 
   class << self
+    attr_reader :mention_keywords
+
     def username(name)
       default_message_options[:username] = name
     end
@@ -73,6 +75,10 @@ class SlackBotServer::Bot
 
     def channel(channel)
       default_message_options[:channel] = channel
+    end
+
+    def mention_as(*keywords)
+      @mention_keywords = keywords
     end
 
     def default_message_options
@@ -96,9 +102,9 @@ class SlackBotServer::Bot
     def on_mention(&block)
       on(:message) do |data|
         if !bot_message?(data) &&
-           (data['text'] =~ /\A#{user}[\s\:](.*)/ ||
-            data['text'] =~ /\A<@#{user_id}>[\s\:](.*)/)
-          message = $1.strip
+           (data['text'] =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
+            data['text'] =~ /\A(<@#{user_id}>)[\s\:](.*)/)
+          message = $2.strip
           @last_received_data = data.merge('message' => message)
           instance_exec(@last_received_data, &block)
         end
@@ -188,5 +194,9 @@ class SlackBotServer::Bot
 
   def default_message_options
     self.class.default_message_options
+  end
+
+  def mention_keywords
+    self.class.mention_keywords || [user]
   end
 end

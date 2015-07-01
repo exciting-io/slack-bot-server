@@ -114,6 +114,11 @@ RSpec.describe SlackBotServer::Bot do
           expect(check).to receive(:call).with(hash_including('message' => 'is great'))
           send_message('text' => 'test_bot is great')
         end
+
+        it 'matches name in other cases' do
+          expect(check).to receive(:call).with(hash_including('message' => 'is great'))
+          send_message('text' => 'Test_BOT is great')
+        end
       end
 
       describe 'when name is used in @mention' do
@@ -150,6 +155,27 @@ RSpec.describe SlackBotServer::Bot do
 
         expect(slack_api).to receive(:chat_postMessage).with(hash_including(text: 'hello', channel: '#channel'))
         send_message('channel' => '#channel', 'text' => 'test_bot hey')
+      end
+
+      context 'when mention keywords have been specified' do
+        it 'matches each word' do
+          instance_check = check
+          bot_instance do
+            mention_as 'hey', 'dude', 'yo bot'
+            on_mention do |message|
+              instance_check.call(message)
+            end
+          end
+
+          expect(check).to receive(:call).with(hash_including('message' => 'you'))
+          send_message('text' => 'hey you')
+
+          expect(check).to receive(:call).with(hash_including('message' => 'what?'))
+          send_message('text' => 'Dude what?')
+
+          expect(check).to receive(:call).with(hash_including('message' => 'are you there'))
+          send_message('text' => 'YO BOT are you there')
+        end
       end
     end
 
