@@ -10,6 +10,7 @@ class SlackBotServer::Bot
     @key = key || @token
     @api = ::Slack::Client.new(token: @token)
     @im_channel_ids = []
+    @connected = false
 
     raise InvalidToken unless auth_test['ok']
   end
@@ -38,6 +39,7 @@ class SlackBotServer::Bot
     @ws = Faye::WebSocket::Client.new(websocket_url, nil, ping: 60)
 
     @ws.on :open do |event|
+      @connected = true
       log "connected to '#{team}'"
       load_im_channels
     end
@@ -48,11 +50,13 @@ class SlackBotServer::Bot
         handle_message(event)
       rescue => e
         log error: e
+        log backtrace: e.backtrace
       end
     end
 
     @ws.on :close do |event|
       log "disconnected"
+      @connected = false
     end
   end
 
@@ -60,6 +64,10 @@ class SlackBotServer::Bot
     log "closing connection"
     @ws.close
     log "closed"
+  end
+
+  def connected?
+    @connected
   end
 
   class << self
