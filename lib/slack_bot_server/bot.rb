@@ -46,7 +46,7 @@ class SlackBotServer::Bot
 
     @ws.on :message do |event|
       begin
-        debug event
+        debug event.data
         handle_message(event)
       rescue => e
         log error: e
