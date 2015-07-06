@@ -11,6 +11,7 @@ class SlackBotServer::Bot
     @api = ::Slack::Client.new(token: @token)
     @im_channel_ids = []
     @connected = false
+    @running = false
 
     raise InvalidToken unless auth_test['ok']
   end
@@ -36,6 +37,7 @@ class SlackBotServer::Bot
   end
 
   def start
+    @running = true
     @ws = Faye::WebSocket::Client.new(websocket_url, nil, ping: 60)
 
     @ws.on :open do |event|
@@ -57,11 +59,15 @@ class SlackBotServer::Bot
     @ws.on :close do |event|
       log "disconnected"
       @connected = false
+      if @running
+        start
+      end
     end
   end
 
   def stop
     log "closing connection"
+    @running = false
     @ws.close
     log "closed"
   end
