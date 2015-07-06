@@ -10,6 +10,7 @@ class SlackBotServer::Bot
     @key = key || @token
     @api = ::Slack::Client.new(token: @token)
     @im_channel_ids = []
+    @channel_ids = []
     @connected = false
     @running = false
 
@@ -17,7 +18,9 @@ class SlackBotServer::Bot
   end
 
   def say(options)
-    @api.chat_postMessage(default_message_options.merge(options))
+    @channel_ids.each do |channel_id|
+      @api.chat_postMessage(default_message_options.merge(options).merge(channel: channel_id))
+    end
   end
 
   def reply(options)
@@ -44,6 +47,7 @@ class SlackBotServer::Bot
       @connected = true
       log "connected to '#{team}'"
       load_im_channels
+      load_channels
     end
 
     @ws.on :message do |event|
@@ -87,16 +91,12 @@ class SlackBotServer::Bot
       default_message_options[:icon_url] = url
     end
 
-    def channel(channel)
-      default_message_options[:channel] = channel
-    end
-
     def mention_as(*keywords)
       @mention_keywords = keywords
     end
 
     def default_message_options
-      @default_message_options ||= {channel: '#general'}
+      @default_message_options ||= {}
     end
 
     def callbacks_for(type)
@@ -139,6 +139,18 @@ class SlackBotServer::Bot
     channel_id = data['channel']['id']
     log "Adding new IM channel: #{channel_id}"
     @im_channel_ids << channel_id
+  end
+
+  on :channel_joined do |data|
+    channel_id = data['channel']['id']
+    log "Adding new channel: #{channel_id}"
+    @channel_ids << channel_id
+  end
+
+  on :channel_left do |data|
+    channel_id = data['channel']
+    log "Removing channel: #{channel_id}"
+    @channel_ids.delete(channel_id)
   end
 
   def to_s
@@ -192,6 +204,13 @@ class SlackBotServer::Bot
     result = @api.im_list
     @im_channel_ids = result['ims'].map { |d| d['id'] }
     log im_channels: @im_channel_ids
+  end
+
+  def load_channels
+    log "Loading IM channels"
+    result = @api.channels_list(exclude_archived: 1)
+    @channel_ids = result['channels'].select { |d| d['is_member'] == true }.map { |d| d['id'] }
+    log channels: @channel_ids
   end
 
   def is_im_channel?(id)

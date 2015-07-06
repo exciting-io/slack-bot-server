@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe SlackBotServer::Bot do
-  let(:slack_api) { double('slack api', im_list: {'ims' => []}) }
+  let(:slack_api) { double('slack api', im_list: {'ims' => []}, channels_list: {'channels' => [{'id' => 'ABC123', 'is_member' => true}]}) }
 
   before do
     stub_websocket
@@ -33,18 +33,9 @@ RSpec.describe SlackBotServer::Bot do
     bot.say text: 'hello'
   end
 
-  it "allows setting the default channel" do
-    bot = bot_instance do
-      channel '#random'
-    end
-    expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: '#random'))
-
-    bot.say text: 'hello'
-  end
-
-  it "sends messages to the #general channel by default" do
+  it "sends messages to all channels it is part of by default" do
     bot = bot_instance
-    expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: '#general'))
+    expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'ABC123'))
 
     bot.say text: 'hello'
   end
