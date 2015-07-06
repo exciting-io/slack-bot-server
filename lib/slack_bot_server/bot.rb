@@ -218,7 +218,8 @@ class SlackBotServer::Bot
   end
 
   def bot_message?(data)
-    data['subtype'] == 'bot_message'
+    data['subtype'] == 'bot_message' ||
+    data['user'] == 'USLACKBOT'
   end
 
   def websocket_url
