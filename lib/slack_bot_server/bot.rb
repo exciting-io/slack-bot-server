@@ -207,7 +207,7 @@ class SlackBotServer::Bot
   end
 
   def load_channels
-    log "Loading IM channels"
+    log "Loading channels"
     result = @api.channels_list(exclude_archived: 1)
     @channel_ids = result['channels'].select { |d| d['is_member'] == true }.map { |d| d['id'] }
     log channels: @channel_ids
