@@ -24,4 +24,3 @@ class SlackBotServer::RedisQueue
     end
   end
 end
-
