@@ -1,4 +1,5 @@
 require 'slack'
+require 'slack/client'
 
 class SlackBotServer::Bot
   attr_reader :key
