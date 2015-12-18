@@ -53,7 +53,7 @@ class SlackBotServer::Bot
     @ws.on :open do |event|
       @connected = true
       log "connected to '#{team_name}'"
-      load_channels
+      run_callbacks(:start)
     end
 
     @ws.on :message do |event|
@@ -105,18 +105,21 @@ class SlackBotServer::Bot
       @default_message_options ||= {}
     end
 
+    def callbacks
+      @callbacks ||= {}
+    end
+
     def callbacks_for(type)
-      callbacks = @callbacks[type.to_sym] || []
+      matching_callbacks = callbacks[type.to_sym] || []
       if superclass.respond_to?(:callbacks_for)
-        callbacks += superclass.callbacks_for(type)
+        matching_callbacks += superclass.callbacks_for(type)
       end
-      callbacks
+      matching_callbacks.reverse
     end
 
     def on(type, &block)
-      @callbacks ||= {}
-      @callbacks[type.to_sym] ||= []
-      @callbacks[type.to_sym] << block
+      callbacks[type.to_sym] ||= []
+      callbacks[type.to_sym] << block
     end
 
     def on_mention(&block)
@@ -139,6 +142,10 @@ class SlackBotServer::Bot
         end
       end
     end
+  end
+
+  on :start do
+    load_channels
   end
 
   on :im_created do |data|
@@ -167,13 +174,13 @@ class SlackBotServer::Bot
 
   def handle_message(event)
     data = MultiJson.load(event.data)
-    if data["type"]
-      relevant_callbacks = self.class.callbacks_for(data["type"])
-      if relevant_callbacks && relevant_callbacks.any?
-        relevant_callbacks.each do |c|
-          instance_exec(data, &c)
-        end
-      end
+    run_callbacks(data["type"], data) if data["type"]
+  end
+
+  def run_callbacks(type, data=nil)
+    relevant_callbacks = self.class.callbacks_for(type)
+    relevant_callbacks.each do |c|
+      instance_exec(data, &c)
     end
   end
 

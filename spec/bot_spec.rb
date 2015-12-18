@@ -42,6 +42,17 @@ RSpec.describe SlackBotServer::Bot do
     bot.say text: 'hello'
   end
 
+  it 'invokes :start callbacks after connecting' do
+    check_instance = double('check')
+    expect(check_instance).to receive(:call)
+
+    bot_instance do
+      on :start do
+        check_instance.call
+      end
+    end
+  end
+
   it 'closes websocket when stopping' do
     bot = bot_instance
     expect(stub_websocket).to receive(:close)
