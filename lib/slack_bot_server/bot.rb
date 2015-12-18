@@ -19,20 +19,24 @@ class SlackBotServer::Bot
   end
 
   def say(options)
-    @channel_ids.each do |channel_id|
-      @api.chat_postMessage(default_message_options.merge(options).merge(channel: channel_id))
+    @api.chat_postMessage(default_message_options.merge(options))
+  end
+
+  def broadcast(options)
+    @channel_ids.each do |channel|
+      say(options.merge(channel: channel))
     end
   end
 
   def reply(options)
     channel = @last_received_data['channel']
-    @api.chat_postMessage(default_message_options.merge(options.merge(channel: channel)))
+    say(options.merge(channel: channel))
   end
 
   def say_to(user_id, options)
     result = @api.im_open(user: user_id)
-    channel_id = result['channel']['id']
-    say(options.merge(channel: channel_id))
+    channel = result['channel']['id']
+    say(options.merge(channel: channel))
   end
 
   def call(method, args)

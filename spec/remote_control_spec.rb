@@ -28,6 +28,20 @@ RSpec.describe SlackBotServer::RemoteControl do
     end
   end
 
+  describe "#broadcast" do
+    it "pushes a 'send_message' command onto the queue with the given key and message data" do
+      expect(queue).to receive(:push).with([:broadcast, key, {text: 'hello'}])
+      subject.broadcast(key, text: 'hello')
+    end
+  end
+
+  describe "#say_to" do
+    it "pushes a 'send_message' command onto the queue with the given key and message data" do
+      expect(queue).to receive(:push).with([:say_to, key, 'userid', {text: 'hello'}])
+      subject.say_to(key, 'userid', text: 'hello')
+    end
+  end
+
   describe "#call" do
     it "pushes a 'call' command onto the queue with the given arguments, for the bot with the given key" do
       args = [1, 2, 3]

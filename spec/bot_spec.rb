@@ -2,6 +2,7 @@ require 'spec_helper'
 
 RSpec.describe SlackBotServer::Bot do
   let(:slack_api) { double('slack api', im_list: {'ims' => []}, channels_list: {'channels' => [{'id' => 'ABC123', 'is_member' => true}]}) }
+  let(:bot_user_id) { 'U123456' }
 
   before do
     stub_websocket
@@ -33,13 +34,6 @@ RSpec.describe SlackBotServer::Bot do
     bot.say text: 'hello'
   end
 
-  it "sends messages to all channels it is part of by default" do
-    bot = bot_instance
-    expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'ABC123'))
-
-    bot.say text: 'hello'
-  end
-
   it 'closes websocket when stopping' do
     bot = bot_instance
     expect(stub_websocket).to receive(:close)
@@ -51,6 +45,29 @@ RSpec.describe SlackBotServer::Bot do
     bot_class = Class.new(described_class)
     bot = bot_class.new(token: token)
     expect(bot.key).to eq token
+  end
+
+  context 'sending messages' do
+    let(:bot) { bot_instance }
+
+    it "can broadcast messages to all channels" do
+      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'ABC123'))
+
+      bot.broadcast text: 'hello'
+    end
+
+    it "can send a message to a specific channel" do
+      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'C123456'))
+
+      bot.say channel: 'C123456', text: 'hello'
+    end
+
+    it "can send messages as DMs to a specific user" do
+      expect(slack_api).to receive(:im_open).with(hash_including(user: bot_user_id)).and_return({'channel' => {'id' => 'D123'}})
+      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'D123', text: 'hello'))
+
+      bot.say_to(bot_user_id, text: 'hello')
+    end
   end
 
   describe 'handling events from Slack' do

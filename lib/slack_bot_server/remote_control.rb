@@ -17,8 +17,16 @@ class SlackBotServer::RemoteControl
     @queue.push([:remove_bot, key])
   end
 
+  def broadcast(key, message_data)
+    @queue.push([:broadcast, key, message_data])
+  end
+
   def say(key, message_data)
     @queue.push([:say, key, message_data])
+  end
+
+  def say_to(key, user_id, message_data)
+    @queue.push([:say_to, key, user_id, message_data])
   end
 
   def call(key, method, args)
