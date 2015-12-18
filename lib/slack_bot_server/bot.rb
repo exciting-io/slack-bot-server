@@ -15,7 +15,7 @@ class SlackBotServer::Bot
     @connected = false
     @running = false
 
-    raise InvalidToken unless auth_test['ok']
+    raise InvalidToken unless rtm_start_data['ok']
   end
 
   def say(options)
@@ -50,8 +50,7 @@ class SlackBotServer::Bot
 
     @ws.on :open do |event|
       @connected = true
-      log "connected to '#{team}'"
-      load_im_channels
+      log "connected to '#{team_name}'"
       load_channels
     end
 
@@ -189,33 +188,31 @@ class SlackBotServer::Bot
   end
 
   def user
-    auth_test['user']
+    rtm_start_data['self']['name']
   end
 
   def user_id
-    auth_test['user_id']
+    rtm_start_data['self']['id']
   end
 
-  def team
-    auth_test['team']
-  end
-
-  def auth_test
-    @auth_test ||= @api.auth_test
-  end
-
-  def load_im_channels
-    log "Loading IM channels"
-    result = @api.im_list
-    @im_channel_ids = result['ims'].map { |d| d['id'] }
-    log im_channels: @im_channel_ids
+  def team_name
+    rtm_start_data['team']['name']
   end
 
   def load_channels
     log "Loading channels"
-    result = @api.channels_list(exclude_archived: 1)
-    @channel_ids = result['channels'].select { |d| d['is_member'] == true }.map { |d| d['id'] }
+    @im_channel_ids = rtm_start_data['ims'].map { |d| d['id'] }
+    log im_channels: @im_channel_ids
+    @channel_ids = rtm_start_data['channels'].select { |d| d['is_member'] == true }.map { |d| d['id'] }
     log channels: @channel_ids
+  end
+
+  def websocket_url
+    rtm_start_data['url']
+  end
+
+  def rtm_start_data
+    @rtm_start_data ||= @api.post('rtm.start')
   end
 
   def is_im_channel?(id)

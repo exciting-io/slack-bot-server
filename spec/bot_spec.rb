@@ -1,18 +1,26 @@
 require 'spec_helper'
 
 RSpec.describe SlackBotServer::Bot do
-  let(:slack_api) { double('slack api', im_list: {'ims' => []}, channels_list: {'channels' => [{'id' => 'ABC123', 'is_member' => true}]}) }
+  let(:slack_api) { double('slack api') }
+  let(:im_list) { [] }
+  let(:channel_list) { [{'id' => 'ABC123', 'is_member' => true}] }
   let(:bot_user_id) { 'U123456' }
 
   before do
     stub_websocket
     allow(::Slack::Client).to receive(:new).and_return(slack_api)
-    allow(slack_api).to receive(:auth_test).and_return({'ok' => true, 'user' => 'test_bot', 'user_id' => '123456'})
-    allow(slack_api).to receive(:post).with('rtm.start').and_return({'url' => 'ws://example.dev/slack'})
+    allow(slack_api).to receive(:post).with('rtm.start').and_return({
+      'ok' => true,
+      'self' => {'name' => 'test_bot', 'id' => bot_user_id},
+      'team' => {'name' => 'team name', 'id' => 'T123456'},
+      'ims' => im_list,
+      'channels' => channel_list,
+      'url' => 'ws://example.dev/slack'
+    })
   end
 
   it "raises an exception if the token was rejected by slack" do
-    allow(slack_api).to receive(:auth_test).and_return({'ok' => false})
+    allow(slack_api).to receive(:post).with('rtm.start').and_return({'ok' => false})
     expect { bot_instance }.to raise_error(SlackBotServer::Bot::InvalidToken)
   end
 
@@ -131,13 +139,13 @@ RSpec.describe SlackBotServer::Bot do
 
       describe 'when name is used in @mention' do
         it 'invokes on_mention blocks when test_bot is mentioned' do
-          expect(check).to receive(:call).with(hash_including('text' => '<@123456> is great'))
-          send_message('text' => '<@123456> is great')
+          expect(check).to receive(:call).with(hash_including('text' => '<@U123456> is great'))
+          send_message('text' => '<@U123456> is great')
         end
 
         it 'extracts message without username into message parameter' do
           expect(check).to receive(:call).with(hash_including('message' => 'is great'))
-          send_message('text' => '<@123456> is great')
+          send_message('text' => '<@U123456> is great')
         end
       end
 
@@ -189,10 +197,9 @@ RSpec.describe SlackBotServer::Bot do
 
     describe "on_im" do
       let(:channel_id) { 'im123' }
+      let(:im_list) { [{'id' => channel_id}] }
 
       before do
-        allow(slack_api).to receive(:im_list).and_return('ims' => [{'id' => channel_id}])
-
         instance_check = check
         bot_instance do
           on_im do |message|
