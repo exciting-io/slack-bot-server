@@ -218,6 +218,16 @@ RSpec.describe SlackBotServer::Bot do
         send_message('channel' => channel_id, 'text' => 'hey you', 'subtype' => 'bot_message')
       end
 
+      it 'does not invoke the block if the message is an expansion of a message from a bot' do
+        expect(check).not_to receive(:call)
+        send_message('channel' => channel_id, 'subtype' => 'message_changed', 'previous_message' => {'user' => bot_user_id})
+      end
+
+      it 'does not invoke the block if the message is from SlackBot' do
+        expect(check).not_to receive(:call)
+        send_message('channel' => channel_id, 'user' => SlackBotServer::Bot::SLACKBOT_USER_ID)
+      end
+
       it 'does not invoke block for messages to non-IM channels bot is in' do
         expect(check).not_to receive(:call)
         send_message('channel' => 'other123', 'text' => 'hey you')

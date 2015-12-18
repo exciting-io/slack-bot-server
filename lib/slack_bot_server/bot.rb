@@ -2,6 +2,8 @@ require 'slack'
 require 'slack/client'
 
 class SlackBotServer::Bot
+  SLACKBOT_USER_ID = 'USLACKBOT'
+
   attr_reader :key
 
   class InvalidToken < RuntimeError; end
@@ -221,7 +223,14 @@ class SlackBotServer::Bot
 
   def bot_message?(data)
     data['subtype'] == 'bot_message' ||
-    data['user'] == 'USLACKBOT'
+    data['user'] == SLACKBOT_USER_ID ||
+    data['user'] == user_id ||
+    change_to_previous_bot_message?(data)
+  end
+
+  def change_to_previous_bot_message?(data)
+    data['subtype'] == 'message_changed' &&
+    data['previous_message']['user'] == user_id
   end
 
   def websocket_url
