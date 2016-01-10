@@ -4,13 +4,12 @@ require 'slack_bot_server/remote_control'
 RSpec.describe SlackBotServer::RemoteControl do
   let(:queue) { double('queue') }
   subject { described_class.new(queue: queue) }
-  let(:token) { 'some-slack-api-token' }
   let(:key) { 'local-unique-key'}
 
-  describe "#add_token" do
-    it "pushes an 'add_token' command onto the queue with the given token" do
-      expect(queue).to receive(:push).with([:add_token, token])
-      subject.add_token(token)
+  describe "#add_bot" do
+    it "pushes an 'add_bot' command onto the queue with the given arguments" do
+      expect(queue).to receive(:push).with([:add_bot, 'arg1', 'arg2', 'arg3'])
+      subject.add_bot('arg1', 'arg2', 'arg3')
     end
   end
 

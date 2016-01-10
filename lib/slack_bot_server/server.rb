@@ -8,12 +8,12 @@ class SlackBotServer::Server
   def initialize(queue: SlackBotServer::LocalQueue.new)
     @queue = queue
     @bots = {}
-    @new_token_proc = -> (token) { SlackBotServer::SimpleBot.new(token: token) }
+    @add_proc = -> (token) { SlackBotServer::SimpleBot.new(token: token) }
     @running = false
   end
 
-  def on_new_token(&block)
-    @new_token_proc = block
+  def on_add(&block)
+    @add_proc = block
   end
 
   def start
@@ -43,15 +43,13 @@ class SlackBotServer::Server
     @bots[key.to_sym]
   end
 
-  def add_bot(bot)
-    log "adding bot #{bot}"
-    @bots[bot.key.to_sym] = bot
-    bot.start if @running
-  end
-
-  def add_token(token)
-    bot = @new_token_proc.call(token)
-    add_bot(bot) if bot
+  def add_bot(*args)
+    bot = @add_proc.call(*args)
+    if bot
+      log "adding bot #{bot}"
+      @bots[bot.key.to_sym] = bot
+      bot.start if @running
+    end
   rescue => e
     log_error(e)
   end

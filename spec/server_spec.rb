@@ -68,25 +68,24 @@ RSpec.describe SlackBotServer::Server do
     end
   end
 
-  describe "#add_token" do
-    it "adds the result of the new token proc" do
-      bot_factory = double('bot factory')
-      bot = double('bot')
-      expect(bot_factory).to receive(:build).with('token').and_return(bot)
-      server.on_new_token { |token| bot_factory.build(token) }
-      expect(server).to receive(:add_bot).with(bot)
-
-      server.add_token('token')
-    end
-  end
-
   describe "#add_bot" do
     let(:bot) { double('bot', key: 'key', start: nil) }
+    let(:bot_factory) { double('bot factory', build: bot) }
+
+    before do
+      stub_running_server
+      server.on_add { |*args| bot_factory.build(*args) }
+    end
+
+    it "builds the bot by passing the arguments to the add proc" do
+      expect(bot_factory).to receive(:build).with('arg1', 'arg2').and_return(bot)
+
+      server.add_bot('arg1', 'arg2')
+    end
 
     it "starts the bot if the server is running" do
-      stub_running_server
       expect(bot).to receive(:start)
-      server.add_bot(bot)
+      server.add_bot('args')
     end
 
     it "makes the bot available by key" do
@@ -105,7 +104,12 @@ RSpec.describe SlackBotServer::Server do
 
     describe "with a valid key" do
       let(:bot) { double('bot', key: 'key', stop: nil) }
-      before { server.add_bot(bot) }
+      let(:bot_factory) { double('bot factory', build: bot) }
+
+      before do
+        server.on_add { |*args| bot_factory.build(*args) }
+        server.add_bot
+      end
 
       it "stops the bot" do
         expect(bot).to receive(:stop)

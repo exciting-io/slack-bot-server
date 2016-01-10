@@ -9,8 +9,8 @@ class SlackBotServer::RemoteControl
     @queue = queue
   end
 
-  def add_token(token)
-    @queue.push([:add_token, token])
+  def add_bot(*args)
+    @queue.push([:add_bot, *args])
   end
 
   def remove_bot(key)
