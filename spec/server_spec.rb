@@ -103,7 +103,7 @@ RSpec.describe SlackBotServer::Server do
     end
 
     describe "with a valid key" do
-      let(:bot) { double('bot', key: 'key', stop: nil) }
+      let(:bot) { double('bot', key: 'key', start: nil, stop: nil) }
       let(:bot_factory) { double('bot factory', build: bot) }
 
       before do
