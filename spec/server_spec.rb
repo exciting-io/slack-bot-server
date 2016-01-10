@@ -11,10 +11,10 @@ RSpec.describe SlackBotServer::Server do
     before { clock.stub }
     after { clock.reset }
 
-    describe "adding a new bot via token" do
-      it "calls add_token on the server with the given token" do
-        expect(server).to receive(:add_token).with('token')
-        enqueue_instruction :add_token, 'token'
+    describe "adding a new bot" do
+      it "calls add_bot on the server with the given arguments" do
+        expect(server).to receive(:add_bot).with('arg1', 'arg2')
+        enqueue_instruction :add_bot, 'arg1', 'arg2'
         run_server
       end
     end

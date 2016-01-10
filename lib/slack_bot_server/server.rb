@@ -68,10 +68,9 @@ class SlackBotServer::Server
   def process_instruction(instruction)
     type, *args = instruction
     case type.to_sym
-    when :add_token
-      token = args.first
-      log "got new token: '#{token}'"
-      add_token(token)
+    when :add_bot
+      log "adding bot: #{args.inspect}"
+      add_bot(*args)
     when :remove_bot
       key = args.first
       remove_bot(key)
