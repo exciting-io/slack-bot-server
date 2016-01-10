@@ -105,6 +105,8 @@ server = SlackBotServer::Server.new(queue: queue)
 # certainly need to use a Slack API token to actually connect to Slack,
 # this should either be one of the arguments, or be retrievable using one
 # of the arguments.
+# It should return a bot (something that responds to `start`); if anything
+# else is returned, it will be ignored.
 server.on_add do |token, team_id|
   # Our bots need to know some data about the team they are connecting
   # to, like specifics of their account and their tasks

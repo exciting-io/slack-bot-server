@@ -12,6 +12,10 @@ class SlackBotServer::Server
     @running = false
   end
 
+  # Define the block which should be called when the `add_bot` method is
+  # called, or the `add_bot` message is sent via a queue. This block
+  # should return a bot (which responds to start), in which case it will
+  # be added and started. If anything else is returned, it will be ignored.
   def on_add(&block)
     @add_proc = block
   end
@@ -45,7 +49,7 @@ class SlackBotServer::Server
 
   def add_bot(*args)
     bot = @add_proc.call(*args)
-    if bot
+    if bot.respond_to?(:start)
       log "adding bot #{bot}"
       @bots[bot.key.to_sym] = bot
       bot.start if @running
