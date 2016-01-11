@@ -132,7 +132,7 @@ server.start
 
 ### Managing bots
 
-When someone in your application wspants to connect their account with Slack, they'll need to provide a bot API token, which your application should store.
+When someone in your application wants to connect their account with Slack, they'll need to provide a bot API token, which your application should store.
 
 In order to actually create and connect their bot, you can use the remote
 control to add the token to the server.
