@@ -24,11 +24,11 @@ class SlackBotServer::Server
     EM.run do
       @running = true
       @bots.each { |key, bot| bot.start }
-      add_timers
+      listen_for_instructions if queue
     end
   end
 
-  def add_timers
+  def listen_for_instructions
     EM.add_periodic_timer(1) do
       begin
         next_message = queue.pop
