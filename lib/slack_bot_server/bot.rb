@@ -17,6 +17,7 @@ class SlackBotServer::Bot
     @channel_ids = []
     @connected = false
     @running = false
+    @message_count = 0
 
     raise InvalidToken unless rtm_start_data['ok']
   end
@@ -38,7 +39,17 @@ class SlackBotServer::Bot
   end
 
   def say(options)
-    @api.chat_postMessage(default_message_options.merge(options))
+    @message_count += 1
+
+    message = symbolize_keys(default_message_options.merge(id: @message_count).merge(options))
+
+    if rtm_incompatible_message?(message)
+      debug "Sending via Web API", message
+      @api.chat_postMessage(message)
+    else
+      debug "Sending via RTM API", message
+      @ws.send(MultiJson.dump(message))
+    end
   end
 
   def broadcast(options)
@@ -125,7 +136,7 @@ class SlackBotServer::Bot
     end
 
     def default_message_options
-      @default_message_options ||= {}
+      @default_message_options ||= {type: 'message'}
     end
 
     def callbacks
@@ -263,6 +274,14 @@ class SlackBotServer::Bot
     data['previous_message']['user'] == user_id
   end
 
+  def rtm_incompatible_message?(data)
+    data[:attachments].nil? ||
+    data[:username].nil? ||
+    data[:icon_url].nil? ||
+    data[:icon_emoji].nil? ||
+    data[:channel].match(/^#/).nil?
+  end
+
   def websocket_url
     @api.post('rtm.start')['url']
   end
@@ -273,5 +292,12 @@ class SlackBotServer::Bot
 
   def mention_keywords
     self.class.mention_keywords || [user]
+  end
+
+  def symbolize_keys(hash)
+    hash.keys.each do |key|
+      hash[key.to_sym] = hash.delete(key)
+    end
+    hash
   end
 end

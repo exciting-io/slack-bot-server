@@ -46,7 +46,7 @@ RSpec.describe SlackBotServer::Bot do
     end
     expect(slack_api).to receive(:chat_postMessage).with(hash_including(username: 'TestBot'))
 
-    bot.say text: 'hello'
+    bot.say text: 'hello', channel: '#general'
   end
 
   it "allows setting the default icon url" do
@@ -55,7 +55,7 @@ RSpec.describe SlackBotServer::Bot do
     end
     expect(slack_api).to receive(:chat_postMessage).with(hash_including(icon_url: 'http://example.com/icon.png'))
 
-    bot.say text: 'hello'
+    bot.say text: 'hello', channel: '#general'
   end
 
   it 'invokes :start callbacks after connecting' do
@@ -88,20 +88,49 @@ RSpec.describe SlackBotServer::Bot do
     it "can broadcast messages to all channels" do
       expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'ABC123'))
 
-      bot.broadcast text: 'hello'
+      bot.broadcast text: 'hello', username: 'Bot'
     end
 
     it "can send a message to a specific channel" do
-      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'C123456'))
+      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: '#general'))
 
-      bot.say channel: 'C123456', text: 'hello'
+      bot.say channel: '#general', text: 'hello', username: 'Bot'
     end
 
     it "can send messages as DMs to a specific user" do
       expect(slack_api).to receive(:im_open).with(hash_including(user: bot_user_id)).and_return({'channel' => {'id' => 'D123'}})
       expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'D123', text: 'hello'))
 
-      bot.say_to(bot_user_id, text: 'hello')
+      bot.say_to(bot_user_id, text: 'hello', username: 'Bot')
+    end
+  end
+
+  context "RTM messaging" do
+    let(:bot) { bot_instance }
+
+    before do
+      allow(slack_api).to receive(:chat_postMessage)
+      expect(stub_websocket).not_to receive(:send)
+    end
+
+    it "won't send via RTM if the message contains attachments" do
+      bot.say channel: 'C123456', text: 'hello', attachments: 'attachment-data'
+    end
+
+    it "won't send via RTM if the message has a username" do
+      bot.say channel: 'C123456', text: 'hello', username: 'Dave'
+    end
+
+    it "won't send via RTM if the message has an icon URL" do
+      bot.say channel: 'C123456', text: 'hello', icon_url: 'http://icon.example.com'
+    end
+
+    it "won't send via RTM if the message has an icon emoji" do
+      bot.say channel: 'C123456', text: 'hello', icon_emoji: ':+1:'
+    end
+
+    it "won't send via RTM if the channel isn't a channel ID" do
+      bot.say channel: '#general', text: 'hello'
     end
   end
 
