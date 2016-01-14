@@ -19,6 +19,22 @@ RSpec.describe SlackBotServer::Bot do
     })
   end
 
+  specify "#user returns the name of the bot" do
+    expect(bot_instance.user).to eq 'test_bot'
+  end
+
+  specify "#user_id returns the user id of the bot" do
+    expect(bot_instance.user_id).to eq bot_user_id
+  end
+
+  specify "#team returns the team name the bot is connected to" do
+    expect(bot_instance.team).to eq 'team name'
+  end
+
+  specify "#team_id returns the id of the team the bot is connected to" do
+    expect(bot_instance.team_id).to eq 'T123456'
+  end
+
   it "raises an exception if the token was rejected by slack" do
     allow(slack_api).to receive(:post).with('rtm.start').and_return({'ok' => false})
     expect { bot_instance }.to raise_error(SlackBotServer::Bot::InvalidToken)

@@ -21,6 +21,22 @@ class SlackBotServer::Bot
     raise InvalidToken unless rtm_start_data['ok']
   end
 
+  def user
+    rtm_start_data['self']['name']
+  end
+
+  def user_id
+    rtm_start_data['self']['id']
+  end
+
+  def team
+    rtm_start_data['team']['name']
+  end
+
+  def team_id
+    rtm_start_data['team']['id']
+  end
+
   def say(options)
     @api.chat_postMessage(default_message_options.merge(options))
   end
@@ -53,7 +69,7 @@ class SlackBotServer::Bot
 
     @ws.on :open do |event|
       @connected = true
-      log "connected to '#{team_name}'"
+      log "connected to '#{team}'"
       run_callbacks(:start)
     end
 
@@ -195,18 +211,6 @@ class SlackBotServer::Bot
     text = message.is_a?(String) ? message : message.inspect
     text = "[BOT/#{user}] #{text}"
     SlackBotServer.logger.debug(message)
-  end
-
-  def user
-    rtm_start_data['self']['name']
-  end
-
-  def user_id
-    rtm_start_data['self']['id']
-  end
-
-  def team_name
-    rtm_start_data['team']['name']
   end
 
   def load_channels

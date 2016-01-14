@@ -1,18 +1,19 @@
-## 0.3.1
+## Unreleased
 
-Changes:
-
- - Add missing/implicit requires to server.rb and bot.rb
+### Added
+ - `SlackBotServer::Bot` now exposes `user`, `user_id`, `team`, and `team_id` methods
  - The logger can now be set via `SlackBotServer.logger=`
+
+### Changes
+ - Add missing/implicit requires to server.rb and bot.rb
  - Only listen for instructions on the queue if its non-nil
  - Fix bug where malformed bot key could crash when processing instructions
- - Allow `SlackBotServer::RedisQueue.new` to take a custom redis key; note
-   that this has changed the argument format of the initialiser
+ - Allow `SlackBotServer::RedisQueue.new` to take a custom redis key; note that this has changed the argument format of the initialiser
+
 
 ## 0.3.0
 
-Changes:
-
+### Changes
   - The `SlackBotServer::Server#on_new_proc` has been renamed to `Server#on_add`
   - The `add` and `add_bot` methods on `SlackBotServer::Server` and `SlackBotServer::RemoteControl` control have been merged as `add_bot`
   - Multiple arguments may be passed via the `add_bot` method to the block given to `SlackBotServer::on_add`
