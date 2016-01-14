@@ -2,6 +2,7 @@
 
 Changes:
 
+ - The logger can now be set via `SlackBotServer.logger=`
  - Only listen for instructions on the queue if its non-nil
  - Fix bug where malformed bot key could crash when processing instructions
  - Allow `SlackBotServer::RedisQueue.new` to take a custom redis key; note
