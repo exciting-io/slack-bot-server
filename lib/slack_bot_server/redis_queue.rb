@@ -1,8 +1,8 @@
 require 'multi_json'
 
 class SlackBotServer::RedisQueue
-  def initialize(redis=nil)
-    @key = 'slack_bot_server:queue'
+  def initialize(redis: nil, key: 'slack_bot_server:queue')
+    @key = key
     @redis = if redis
       redis
     else

@@ -3,13 +3,22 @@ require 'spec_helper'
 RSpec.describe SlackBotServer::RedisQueue do
   let(:queue_key) { 'slack_bot_server:queue' }
   let(:redis) { double('redis') }
-  subject { described_class.new(redis) }
+  subject { described_class.new(redis: redis) }
 
   it "will default to the default Redis connection if none is given" do
     redis_class = Class.new
     stub_const("Redis", redis_class)
     expect(redis_class).to receive(:new).and_return(redis)
     described_class.new()
+  end
+
+  it "allows specification of a custom key" do
+    queue = described_class.new(redis: redis, key: 'custom-key')
+
+    allow(MultiJson).to receive(:dump).and_return('json-value')
+    expect(redis).to receive(:rpush).with('custom-key', 'json-value')
+
+    queue.push('some value')
   end
 
   describe "#push" do

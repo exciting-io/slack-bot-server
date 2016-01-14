@@ -1,3 +1,10 @@
+## 0.3.1
+
+Changes:
+
+ - Allow `SlackBotServer::RedisQueue.new` to take a custom redis key; note
+   that this has changed the argument format of the initialiser
+
 ## 0.3.0
 
 Changes:
