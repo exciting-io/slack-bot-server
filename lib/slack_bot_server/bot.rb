@@ -5,7 +5,7 @@ require 'faye/websocket'
 class SlackBotServer::Bot
   SLACKBOT_USER_ID = 'USLACKBOT'
 
-  attr_reader :key
+  attr_reader :key, :token
 
   class InvalidToken < RuntimeError; end
 
@@ -86,6 +86,7 @@ class SlackBotServer::Bot
     @ws.on :close do |event|
       log "disconnected"
       @connected = false
+      reset!
       if @running
         start
       end
@@ -95,8 +96,13 @@ class SlackBotServer::Bot
   def stop
     log "closing connection"
     @running = false
+    reset!
     @ws.close
     log "closed"
+  end
+
+  def running?
+    @running
   end
 
   def connected?
@@ -227,6 +233,10 @@ class SlackBotServer::Bot
 
   def rtm_start_data
     @rtm_start_data ||= @api.post('rtm.start')
+  end
+
+  def reset!
+    @rtm_start_data = nil
   end
 
   def is_im_channel?(id)
