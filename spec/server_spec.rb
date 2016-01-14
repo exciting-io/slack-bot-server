@@ -21,6 +21,7 @@ RSpec.describe SlackBotServer::Server do
 
     describe "removing a bot from the server" do
       it "calls remove_bot on the server with the given key" do
+        allow(server).to receive(:bot).with('bot-key').and_return(double('bot'))
         expect(server).to receive(:remove_bot).with('bot-key')
         enqueue_instruction :remove_bot, 'bot-key'
         run_server

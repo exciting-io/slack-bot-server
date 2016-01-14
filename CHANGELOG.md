@@ -2,6 +2,7 @@
 
 Changes:
 
+ - Fix bug where malformed bot key could crash when processing instructions
  - Allow `SlackBotServer::RedisQueue.new` to take a custom redis key; note
    that this has changed the argument format of the initialiser
 

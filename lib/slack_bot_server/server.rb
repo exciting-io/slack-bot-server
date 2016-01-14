@@ -71,34 +71,32 @@ class SlackBotServer::Server
 
   def process_instruction(instruction)
     type, *args = instruction
-    case type.to_sym
-    when :add_bot
-      log "adding bot: #{args.inspect}"
-      add_bot(*args)
-    when :remove_bot
-      key = args.first
-      remove_bot(key)
-    when :broadcast
-      key, message_data = args
-      log "[#{key}] broadcast: #{message_data}"
-      bot = bot(key)
-      bot.broadcast(message_data)
-    when :say
-      key, message_data = args
-      log "[#{key}] say: #{message_data}"
-      bot = bot(key)
-      bot.say(message_data)
-    when :say_to
-      key, user_id, message_data = args
-      log "[#{key}] say_to: (#{user_id}) #{message_data}"
-      bot = bot(key)
-      bot.say_to(user_id, message_data)
-    when :call
-      key, method, method_args = args
-      bot = bot(key)
-      bot.call(method, method_args)
+    bot_key = args.shift
+    if type == :add_bot
+      log "adding bot: #{bot_key} #{args.inspect}"
+      add_bot(bot_key, *args)
     else
-      log unknown_command: instruction
+      with_bot(bot_key) do |bot|
+        case type.to_sym
+        when :remove_bot
+          remove_bot(bot_key)
+        when :broadcast
+          log "[#{bot_key}] broadcast: #{args}"
+          bot.broadcast(*args)
+        when :say
+          log "[#{bot_key}] say: #{args}"
+          bot.say(*args)
+        when :say_to
+          user_id, message_data = args
+          log "[#{bot_key}] say_to: (#{user_id}) #{message_data}"
+          bot.say_to(user_id, message_data)
+        when :call
+          method, method_args = args
+          bot.call(method, method_args)
+        else
+          log unknown_command: instruction
+        end
+      end
     end
   end
 
@@ -110,5 +108,13 @@ class SlackBotServer::Server
   def log_error(e)
     SlackBotServer.logger.warn("Error in server: #{e} - #{e.message}")
     SlackBotServer.logger.warn(e.backtrace.join("\n"))
+  end
+
+  def with_bot(key)
+    if bot = bot(key)
+      yield bot
+    else
+      log("Unknown bot: #{key}")
+    end
   end
 end
