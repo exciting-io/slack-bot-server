@@ -48,7 +48,7 @@ class SlackBotServer::Bot
       @api.chat_postMessage(message)
     else
       debug "Sending via RTM API", message
-      @ws.send(MultiJson.dump(message))
+      rtm_send(message)
     end
   end
 
@@ -67,6 +67,13 @@ class SlackBotServer::Bot
     result = @api.im_open(user: user_id)
     channel = result['channel']['id']
     say(options.merge(channel: channel))
+  end
+
+  def typing(options={})
+    @next_message_id += 1
+    last_received_channel = @last_received_data ? @last_received_data['channel'] : nil
+    default_options = {channel: last_received_channel, id: @next_message_id, type: 'typing'}
+    rtm_send(default_options.merge(options))
   end
 
   def call(method, args)
@@ -219,6 +226,10 @@ class SlackBotServer::Bot
       response = instance_exec(data, &c)
       break if response == false
     end
+  end
+
+  def rtm_send(message)
+    @ws.send(MultiJson.dump(message))
   end
 
   def log(*args)

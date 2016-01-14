@@ -134,6 +134,27 @@ RSpec.describe SlackBotServer::Bot do
     end
   end
 
+  describe "#typing" do
+    let(:channel_id) { 'im123' }
+    let(:im_list) { [{'id' => channel_id}] }
+
+    it "send a typing message via RTM" do
+      expect(stub_websocket).to receive(:send).with(MultiJson.dump({channel: 'C123', id: '123', type: 'typing'}))
+      bot_instance.typing(channel: 'C123', id: '123')
+    end
+
+    it "sends a typing even to the last received slack channel by default" do
+      bot_instance do
+        on_im do |message|
+          typing
+        end
+      end
+
+      expect(stub_websocket).to receive(:send).with(MultiJson.dump(channel: channel_id, id: 1, type: 'typing'))
+      send_message('channel' => channel_id, 'text' => 'hi')
+    end
+  end
+
   describe 'handling events from Slack' do
     let(:check) { double('check') }
 
