@@ -17,7 +17,7 @@ class SlackBotServer::Bot
     @channel_ids = []
     @connected = false
     @running = false
-    @message_count = 0
+    @next_message_id = 0
 
     raise InvalidToken unless rtm_start_data['ok']
   end
@@ -39,9 +39,9 @@ class SlackBotServer::Bot
   end
 
   def say(options)
-    @message_count += 1
+    @next_message_id += 1
 
-    message = symbolize_keys(default_message_options.merge(id: @message_count).merge(options))
+    message = symbolize_keys(default_message_options.merge(id: @next_message_id).merge(options))
 
     if rtm_incompatible_message?(message)
       debug "Sending via Web API", message
