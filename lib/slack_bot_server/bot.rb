@@ -210,16 +210,21 @@ class SlackBotServer::Bot
     end
   end
 
-  def log(message)
-    text = message.is_a?(String) ? message : message.inspect
-    text = "[BOT/#{user}] #{text}"
-    SlackBotServer.logger.info(message)
+  def log(*args)
+    SlackBotServer.logger.info(log_string(*args))
   end
 
-  def debug(message)
-    text = message.is_a?(String) ? message : message.inspect
-    text = "[BOT/#{user}] #{text}"
-    SlackBotServer.logger.debug(message)
+  def debug(*args)
+    SlackBotServer.logger.debug(log_string(*args))
+  end
+
+  def log_string(*args)
+    text = if args.length == 1 && args.first.is_a?(String)
+      args.first
+    else
+      args.map { |a| a.is_a?(String) ? a : a.inspect }.join(", ")
+    end
+    "[BOT/#{user}] #{text}"
   end
 
   def load_channels

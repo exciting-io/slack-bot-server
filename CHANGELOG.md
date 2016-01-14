@@ -6,6 +6,7 @@
 - The logger can now be set via `SlackBotServer.logger=`
 
 ### Changes
+- Improve internal bot logging API
 - Ensure rtm data is reloaded when reconnecting
 - Add missing/implicit requires to server.rb and bot.rb
 - Only listen for instructions on the queue if its non-nil
