@@ -137,6 +137,24 @@ RSpec.describe SlackBotServer::Bot do
       send_message('text' => 'message!')
     end
 
+    it 'does not invoke later callbacks if earlier ones return false' do
+      check_1 = double('check 1')
+      check_2 = double('check 2')
+      bot_instance do
+        on :message do |message|
+          check_1.call(message)
+          false
+        end
+        on :message do |message|
+          check_2.call(message)
+        end
+      end
+
+      expect(check_1).to receive(:call).with(hash_including('text' => 'message!'))
+      expect(check_2).not_to receive(:call)
+      send_message('text' => 'message!')
+    end
+
     describe "on_mention" do
       before do
         instance_check = check

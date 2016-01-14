@@ -133,11 +133,13 @@ class SlackBotServer::Bot
     end
 
     def callbacks_for(type)
-      matching_callbacks = callbacks[type.to_sym] || []
       if superclass.respond_to?(:callbacks_for)
-        matching_callbacks += superclass.callbacks_for(type)
+        matching_callbacks = superclass.callbacks_for(type)
+      else
+        matching_callbacks = []
       end
-      matching_callbacks.reverse
+      matching_callbacks += callbacks[type.to_sym] if callbacks[type.to_sym]
+      matching_callbacks #.reverse
     end
 
     def on(type, &block)
@@ -203,7 +205,8 @@ class SlackBotServer::Bot
   def run_callbacks(type, data=nil)
     relevant_callbacks = self.class.callbacks_for(type)
     relevant_callbacks.each do |c|
-      instance_exec(data, &c)
+      response = instance_exec(data, &c)
+      break if response == false
     end
   end
 

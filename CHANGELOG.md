@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- Subsequent bot callbacks won't fire if an earlier one returns `false`
 - `SlackBotServer::Bot` now exposes `user`, `user_id`, `team`, and `team_id` methods
 - The logger can now be set via `SlackBotServer.logger=`
 
