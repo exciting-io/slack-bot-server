@@ -1,6 +1,7 @@
 require 'slack_bot_server/bot'
 require 'slack_bot_server/simple_bot'
 require 'slack_bot_server/redis_queue'
+require 'eventmachine'
 
 class SlackBotServer::Server
   attr_reader :queue

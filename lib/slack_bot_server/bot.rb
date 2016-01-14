@@ -1,5 +1,6 @@
 require 'slack'
 require 'slack/client'
+require 'faye/websocket'
 
 class SlackBotServer::Bot
   SLACKBOT_USER_ID = 'USLACKBOT'
