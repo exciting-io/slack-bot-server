@@ -1,15 +1,21 @@
 require 'spec_helper'
+require 'faye/websocket'
 
 RSpec.describe SlackBotServer::Bot do
-  let(:slack_api) { double('slack api') }
+  let(:slack_rtm_api) { ::Slack::RealTime::Client.new }
+  let(:slack_web_api) { double('slack api', rtm_start: {'url' => 'ws://example.com'}) }
   let(:im_list) { [] }
   let(:channel_list) { [{'id' => 'ABC123', 'is_member' => true}] }
   let(:bot_user_id) { 'U123456' }
 
   before do
     stub_websocket
-    allow(::Slack::Client).to receive(:new).and_return(slack_api)
-    allow(slack_api).to receive(:post).with('rtm.start').and_return({
+    allow(::Slack::RealTime::Client).to receive(:new).and_return(slack_rtm_api)
+    allow(slack_rtm_api).to receive(:web_client).and_return(slack_web_api)
+
+    allow(::Slack::Web::Client).to receive(:new).and_return(slack_web_api)
+    allow(slack_web_api).to receive(:auth_test).and_return({'ok' => true})
+    allow(slack_web_api).to receive(:rtm_start).and_return({
       'ok' => true,
       'self' => {'name' => 'test_bot', 'id' => bot_user_id},
       'team' => {'name' => 'team name', 'id' => 'T123456'},
@@ -36,7 +42,7 @@ RSpec.describe SlackBotServer::Bot do
   end
 
   it "raises an exception if the token was rejected by slack" do
-    allow(slack_api).to receive(:post).with('rtm.start').and_return({'ok' => false})
+    allow(slack_web_api).to receive(:auth_test).and_return({'ok' => false})
     expect { bot_instance }.to raise_error(SlackBotServer::Bot::InvalidToken)
   end
 
@@ -44,7 +50,7 @@ RSpec.describe SlackBotServer::Bot do
     bot = bot_instance do
       username 'TestBot'
     end
-    expect(slack_api).to receive(:chat_postMessage).with(hash_including(username: 'TestBot'))
+    expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(username: 'TestBot'))
 
     bot.say text: 'hello', channel: '#general'
   end
@@ -53,7 +59,7 @@ RSpec.describe SlackBotServer::Bot do
     bot = bot_instance do
       icon_url 'http://example.com/icon.png'
     end
-    expect(slack_api).to receive(:chat_postMessage).with(hash_including(icon_url: 'http://example.com/icon.png'))
+    expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(icon_url: 'http://example.com/icon.png'))
 
     bot.say text: 'hello', channel: '#general'
   end
@@ -69,9 +75,9 @@ RSpec.describe SlackBotServer::Bot do
     end
   end
 
-  it 'closes websocket when stopping' do
+  it 'stops rtm client when stopping' do
     bot = bot_instance
-    expect(stub_websocket).to receive(:close)
+    expect(slack_rtm_api).to receive(:stop!)
     bot.stop
   end
 
@@ -86,20 +92,20 @@ RSpec.describe SlackBotServer::Bot do
     let(:bot) { bot_instance }
 
     it "can broadcast messages to all channels" do
-      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'ABC123'))
+      expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(channel: 'ABC123'))
 
       bot.broadcast text: 'hello', username: 'Bot'
     end
 
     it "can send a message to a specific channel" do
-      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: '#general'))
+      expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(channel: '#general'))
 
       bot.say channel: '#general', text: 'hello', username: 'Bot'
     end
 
     it "can send messages as DMs to a specific user" do
-      expect(slack_api).to receive(:im_open).with(hash_including(user: bot_user_id)).and_return({'channel' => {'id' => 'D123'}})
-      expect(slack_api).to receive(:chat_postMessage).with(hash_including(channel: 'D123', text: 'hello'))
+      expect(slack_web_api).to receive(:im_open).with(hash_including(user: bot_user_id)).and_return({'channel' => {'id' => 'D123'}})
+      expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(channel: 'D123', text: 'hello'))
 
       bot.say_to(bot_user_id, text: 'hello', username: 'Bot')
     end
@@ -109,8 +115,8 @@ RSpec.describe SlackBotServer::Bot do
     let(:bot) { bot_instance }
 
     before do
-      allow(slack_api).to receive(:chat_postMessage)
-      expect(stub_websocket).not_to receive(:send)
+      allow(slack_web_api).to receive(:chat_postMessage)
+      expect(slack_rtm_api).not_to receive(:send)
     end
 
     it "won't send via RTM if the message contains attachments" do
@@ -139,7 +145,7 @@ RSpec.describe SlackBotServer::Bot do
     let(:im_list) { [{'id' => channel_id}] }
 
     it "send a typing message via RTM" do
-      expect(stub_websocket).to receive(:send).with(MultiJson.dump({channel: 'C123', id: '123', type: 'typing'}))
+      expect(slack_rtm_api).to receive(:typing).with(include(channel: 'C123'))
       bot_instance.typing(channel: 'C123', id: '123')
     end
 
@@ -150,7 +156,7 @@ RSpec.describe SlackBotServer::Bot do
         end
       end
 
-      expect(stub_websocket).to receive(:send).with(MultiJson.dump(channel: channel_id, id: 1, type: 'typing'))
+      expect(slack_rtm_api).to receive(:typing).with(include(channel: channel_id))
       send_message('channel' => channel_id, 'text' => 'hi')
     end
   end
@@ -257,19 +263,20 @@ RSpec.describe SlackBotServer::Bot do
       end
 
       it 'sends replies back to the same channel' do
-        instance_check = check
+        allow(check).to receive(:call)
         bot_instance do
           on_mention do |message|
             reply text: 'hello'
           end
         end
 
-        expect(slack_api).to receive(:chat_postMessage).with(hash_including(text: 'hello', channel: '#channel'))
+        expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(text: 'hello', channel: '#channel'))
         send_message('channel' => '#channel', 'text' => 'test_bot hey')
       end
 
       context 'when mention keywords have been specified' do
         it 'matches each word' do
+          allow(check).to receive(:call)
           instance_check = check
           bot_instance do
             mention_as 'hey', 'dude', 'yo bot'
@@ -278,14 +285,14 @@ RSpec.describe SlackBotServer::Bot do
             end
           end
 
-          expect(check).to receive(:call).with(hash_including('message' => 'you'))
+          expect(instance_check).to receive(:call).with(hash_including('message' => 'you'))
           send_message('text' => 'hey you')
 
           expect(check).to receive(:call).with(hash_including('message' => 'what?'))
           send_message('text' => 'Dude what?')
 
-          expect(check).to receive(:call).with(hash_including('message' => 'are you there'))
-          send_message('text' => 'YO BOT are you there')
+          expect(check).to receive(:call).with(hash_including('message' => 'lets code'))
+          send_message('text' => 'YO BOT lets code')
         end
       end
     end
@@ -296,6 +303,7 @@ RSpec.describe SlackBotServer::Bot do
 
       before do
         instance_check = check
+        allow(check).to receive(:call)
         bot_instance do
           on_im do |message|
             instance_check.call(message)
@@ -336,14 +344,14 @@ RSpec.describe SlackBotServer::Bot do
       end
 
       it 'sends replies back to the same channel' do
-        instance_check = check
+        allow(check).to receive(:call)
         bot_instance do
           on_im do |message|
             reply text: 'hello'
           end
         end
 
-        expect(slack_api).to receive(:chat_postMessage).with(hash_including(text: 'hello', channel: channel_id))
+        expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(text: 'hello', channel: channel_id))
         send_message('channel' => channel_id, 'text' => 'hi')
       end
     end
@@ -358,11 +366,18 @@ RSpec.describe SlackBotServer::Bot do
   end
 
   def bot_instance(token: 'token', key: 'key', &block)
-    bot_class = Class.new(described_class, &block)
-    instance = bot_class.new(token: token, key: key)
-    instance.start
-    stub_websocket.trigger(:open, nil)
-    instance
+    if @bot_instance
+      @bot_class.class_eval(&block)
+    else
+      @fake_websocket = FakeWebsocket.new
+      allow(Faye::WebSocket::Client).to receive(:new).and_return(@fake_websocket)
+
+      @bot_class = Class.new(described_class, &block)
+      @bot_instance = @bot_class.new(token: token, key: key)
+      @bot_instance.start
+      stub_websocket.trigger(:open, nil)
+    end
+    @bot_instance
   end
 
   class FakeWebsocket
@@ -380,8 +395,8 @@ RSpec.describe SlackBotServer::Bot do
   end
 
   def stub_websocket
-    @fake ||= FakeWebsocket.new
-    allow(Faye::WebSocket::Client).to receive(:new).and_return(@fake)
-    @fake
+    # @fake_websocket ||= FakeWebsocket.new
+    # allow(Faye::WebSocket::Client).to receive(:new).and_return(@fake_websocket)
+    @fake_websocket
   end
 end

@@ -1,6 +1,5 @@
 require 'slack'
-require 'slack/client'
-require 'faye/websocket'
+require 'slack-ruby-client'
 
 class SlackBotServer::Bot
   SLACKBOT_USER_ID = 'USLACKBOT'
@@ -12,43 +11,40 @@ class SlackBotServer::Bot
   def initialize(token:, key: nil)
     @token = token
     @key = key || @token
-    @api = ::Slack::Client.new(token: @token)
+    @client = ::Slack::RealTime::Client.new(token: @token)
     @im_channel_ids = []
     @channel_ids = []
     @connected = false
     @running = false
-    @next_message_id = 0
 
-    raise InvalidToken unless rtm_start_data['ok']
+    raise InvalidToken unless @client.web_client.auth_test['ok']
   end
 
   def user
-    rtm_start_data['self']['name']
+    @client.self['name']
   end
 
   def user_id
-    rtm_start_data['self']['id']
+    @client.self['id']
   end
 
   def team
-    rtm_start_data['team']['name']
+    @client.team['name']
   end
 
   def team_id
-    rtm_start_data['team']['id']
+    @client.team['id']
   end
 
   def say(options)
-    @next_message_id += 1
-
-    message = symbolize_keys(default_message_options.merge(id: @next_message_id).merge(options))
+    message = symbolize_keys(default_message_options.merge(options))
 
     if rtm_incompatible_message?(message)
       debug "Sending via Web API", message
-      @api.chat_postMessage(message)
+      @client.web_client.chat_postMessage(message)
     else
       debug "Sending via RTM API", message
-      rtm_send(message)
+      @client.message(message)
     end
   end
 
@@ -64,58 +60,74 @@ class SlackBotServer::Bot
   end
 
   def say_to(user_id, options)
-    result = @api.im_open(user: user_id)
+    result = @client.web_client.im_open(user: user_id)
     channel = result['channel']['id']
     say(options.merge(channel: channel))
   end
 
   def typing(options={})
-    @next_message_id += 1
     last_received_channel = @last_received_data ? @last_received_data['channel'] : nil
-    default_options = {channel: last_received_channel, id: @next_message_id, type: 'typing'}
-    rtm_send(default_options.merge(options))
+    default_options = {channel: last_received_channel}
+    @client.typing(default_options.merge(options))
   end
 
   def call(method, args)
     args.symbolize_keys!
-    @api.send(method, args)
+    @client.web_client.send(method, args)
   end
 
   def start
     @running = true
-    @ws = Faye::WebSocket::Client.new(websocket_url, nil, ping: 60)
 
-    @ws.on :open do |event|
+    @client.on :open do |event|
       @connected = true
       log "connected to '#{team}'"
       run_callbacks(:start)
     end
 
-    @ws.on :message do |event|
+    @client.on :message do |data|
       begin
-        debug event.data
-        handle_message(event)
+        debug message: data
+        handle_message(data)
       rescue => e
         log error: e
         log backtrace: e.backtrace
       end
     end
 
-    @ws.on :close do |event|
+    @client.on :im_created do |data|
+      channel_id = data['channel']['id']
+      log "Adding new IM channel: #{channel_id}"
+      @im_channel_ids << channel_id
+    end
+
+    @client.on :channel_joined do |data|
+      channel_id = data['channel']['id']
+      log "Adding new channel: #{channel_id}"
+      @channel_ids << channel_id
+    end
+
+    @client.on :channel_left do |data|
+      channel_id = data['channel']
+      log "Removing channel: #{channel_id}"
+      @channel_ids.delete(channel_id)
+    end
+
+    @client.on :close do |event|
       log "disconnected"
       @connected = false
-      reset!
       if @running
         start
       end
     end
+
+    @client.start_async
   end
 
   def stop
     log "closing connection"
     @running = false
-    reset!
-    @ws.close
+    @client.stop!
     log "closed"
   end
 
@@ -157,7 +169,7 @@ class SlackBotServer::Bot
         matching_callbacks = []
       end
       matching_callbacks += callbacks[type.to_sym] if callbacks[type.to_sym]
-      matching_callbacks #.reverse
+      matching_callbacks
     end
 
     def on(type, &block)
@@ -167,6 +179,7 @@ class SlackBotServer::Bot
 
     def on_mention(&block)
       on(:message) do |data|
+        debug on_message: data, bot_message: bot_message?(data)
         if !bot_message?(data) &&
            (data['text'] =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
             data['text'] =~ /\A(<@#{user_id}>)[\s\:](.*)/)
@@ -179,6 +192,7 @@ class SlackBotServer::Bot
 
     def on_im(&block)
       on(:message) do |data|
+        debug on_im: data, bot_message: bot_message?(data), is_im_channel: is_im_channel?(data['channel'])
         if is_im_channel?(data['channel']) && !bot_message?(data)
           @last_received_data = data.merge('message' => data['text'])
           instance_exec(@last_received_data, &block)
@@ -191,33 +205,14 @@ class SlackBotServer::Bot
     load_channels
   end
 
-  on :im_created do |data|
-    channel_id = data['channel']['id']
-    log "Adding new IM channel: #{channel_id}"
-    @im_channel_ids << channel_id
-  end
-
-  on :channel_joined do |data|
-    channel_id = data['channel']['id']
-    log "Adding new channel: #{channel_id}"
-    @channel_ids << channel_id
-  end
-
-  on :channel_left do |data|
-    channel_id = data['channel']
-    log "Removing channel: #{channel_id}"
-    @channel_ids.delete(channel_id)
-  end
-
   def to_s
     "<#{self.class.name} key:#{key}>"
   end
 
   private
 
-  def handle_message(event)
-    data = MultiJson.load(event.data)
-    run_callbacks(data["type"], data) if data["type"]
+  def handle_message(data)
+    run_callbacks(data['type'], data)
   end
 
   def run_callbacks(type, data=nil)
@@ -226,10 +221,6 @@ class SlackBotServer::Bot
       response = instance_exec(data, &c)
       break if response == false
     end
-  end
-
-  def rtm_send(message)
-    @ws.send(MultiJson.dump(message))
   end
 
   def log(*args)
@@ -251,22 +242,10 @@ class SlackBotServer::Bot
 
   def load_channels
     log "Loading channels"
-    @im_channel_ids = rtm_start_data['ims'].map { |d| d['id'] }
+    @im_channel_ids = @client.ims.map { |d| d['id'] }
     log im_channels: @im_channel_ids
-    @channel_ids = rtm_start_data['channels'].select { |d| d['is_member'] == true }.map { |d| d['id'] }
+    @channel_ids = @client.channels.select { |d| d['is_member'] == true }.map { |d| d['id'] }
     log channels: @channel_ids
-  end
-
-  def websocket_url
-    rtm_start_data['url']
-  end
-
-  def rtm_start_data
-    @rtm_start_data ||= @api.post('rtm.start')
-  end
-
-  def reset!
-    @rtm_start_data = nil
   end
 
   def is_im_channel?(id)
@@ -291,10 +270,6 @@ class SlackBotServer::Bot
     data[:icon_url].nil? ||
     data[:icon_emoji].nil? ||
     data[:channel].match(/^#/).nil?
-  end
-
-  def websocket_url
-    @api.post('rtm.start')['url']
   end
 
   def default_message_options
