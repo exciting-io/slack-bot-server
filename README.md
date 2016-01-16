@@ -111,8 +111,10 @@ The provided example `SimpleBot` illustrates the main ways to build a bot:
 require 'slack_bot_server/bot'
 
 class SlackBotServer::SimpleBot < SlackBotServer::Bot
-  # Set the username displayed in Slack
+  # Set the friendly username displayed in Slack
   username 'SimpleBot'
+  # Set the image to use as an avatar icon in Slack
+  icon_url 'http://my.server.example.com/assets/icon.png'
 
   # Respond to mentions in the connected chat room (defaults to #general).
   # As well as the normal data provided by Slack's API, we add the `message`,
@@ -120,7 +122,11 @@ class SlackBotServer::SimpleBot < SlackBotServer::Bot
   # When a user sends 'simple_bot: how are you?', the `message` data contains
   # only 'how are you'.
   on_mention do |data|
-    reply text: "You said '#{data['message']}', and I'm frankly fascinated."
+    if data['message'] == 'who are you'
+      reply text: "I am #{user} (user id: #{user_id}, connected to team #{team} with team id #{team_id}"
+    else
+      reply text: "You said '#{data['message']}', and I'm frankly fascinated."
+    end
   end
 
   # Respond to messages sent via IM communication directly with the bot.

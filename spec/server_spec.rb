@@ -135,7 +135,7 @@ RSpec.describe SlackBotServer::Server do
   end
 
   def run_server
-    server.listen_for_instructions
+    server.send(:listen_for_instructions)
     clock.tick(1)
   end
 end

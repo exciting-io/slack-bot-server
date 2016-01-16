@@ -28,4 +28,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "redis"
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "rspec-eventmachine"
+  spec.add_development_dependency "yard"
 end

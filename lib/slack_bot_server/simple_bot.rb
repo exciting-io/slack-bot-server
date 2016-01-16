@@ -1,5 +1,6 @@
 require 'slack_bot_server/bot'
 
+# A simple demonstration of a bot
 class SlackBotServer::SimpleBot < SlackBotServer::Bot
   # Set the username displayed in Slack
   username 'SimpleBot'
@@ -10,7 +11,11 @@ class SlackBotServer::SimpleBot < SlackBotServer::Bot
   # When a user sends 'simple_bot: how are you?', the `message` data contains
   # only 'how are you'.
   on_mention do |data|
-    reply text: "You said '#{data['message']}', and I'm frankly fascinated."
+    if data['message'] == 'who are you'
+      reply text: "I am #{user} (id: #{user_id}), connected to team #{team} (id #{team_id})"
+    else
+      reply text: "You said '#{data['message']}', and I'm frankly fascinated."
+    end
   end
 
   # Respond to messages sent via IM communication directly with the bot.
