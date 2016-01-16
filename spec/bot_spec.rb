@@ -142,7 +142,7 @@ RSpec.describe SlackBotServer::Bot do
 
   describe "#typing" do
     let(:channel_id) { 'im123' }
-    let(:im_list) { [{'id' => channel_id}] }
+    let(:im_list) { [{'id' => channel_id, 'is_im' => true}] }
 
     it "send a typing message via RTM" do
       expect(slack_rtm_api).to receive(:typing).with(include(channel: 'C123'))
@@ -299,7 +299,7 @@ RSpec.describe SlackBotServer::Bot do
 
     describe "on_im" do
       let(:channel_id) { 'im123' }
-      let(:im_list) { [{'id' => channel_id}] }
+      let(:im_list) { [{'id' => channel_id, 'is_im' => true}] }
 
       before do
         instance_check = check
@@ -337,7 +337,7 @@ RSpec.describe SlackBotServer::Bot do
       end
 
       it 'recognises new IM channels created by users' do
-        send_message('type' => 'im_created', 'channel' => {'id' => 'other123'})
+        send_message('type' => 'im_created', 'channel' => {'id' => 'other123', 'is_im' => true})
 
         expect(check).to receive(:call)
         send_message('channel' => 'other123', 'text' => 'we need to talk')

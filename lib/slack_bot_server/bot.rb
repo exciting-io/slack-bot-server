@@ -12,8 +12,8 @@ class SlackBotServer::Bot
     @token = token
     @key = key || @token
     @client = ::Slack::RealTime::Client.new(token: @token)
-    @im_channel_ids = []
-    @channel_ids = []
+    @im_channels = []
+    @channels = []
     @connected = false
     @running = false
 
@@ -49,8 +49,8 @@ class SlackBotServer::Bot
   end
 
   def broadcast(options)
-    @channel_ids.each do |channel|
-      say(options.merge(channel: channel))
+    @channels.each do |channel|
+      say(options.merge(channel: channel['id']))
     end
   end
 
@@ -96,21 +96,19 @@ class SlackBotServer::Bot
     end
 
     @client.on :im_created do |data|
-      channel_id = data['channel']['id']
-      log "Adding new IM channel: #{channel_id}"
-      @im_channel_ids << channel_id
+      log "Adding new IM channel", data['channel']
+      @im_channels << data['channel']
     end
 
     @client.on :channel_joined do |data|
-      channel_id = data['channel']['id']
-      log "Adding new channel: #{channel_id}"
-      @channel_ids << channel_id
+      log "Adding new channel", data['channel']
+      @channels << data['channel']
     end
 
     @client.on :channel_left do |data|
       channel_id = data['channel']
       log "Removing channel: #{channel_id}"
-      @channel_ids.delete(channel_id)
+      @channels.delete_if { |c| c['id'] == channel_id }
     end
 
     @client.on :close do |event|
@@ -242,14 +240,18 @@ class SlackBotServer::Bot
 
   def load_channels
     log "Loading channels"
-    @im_channel_ids = @client.ims.map { |d| d['id'] }
-    log im_channels: @im_channel_ids
-    @channel_ids = @client.channels.select { |d| d['is_member'] == true }.map { |d| d['id'] }
-    log channels: @channel_ids
+    @im_channels = @client.ims
+    log im_channels: @im_channels
+    @channels = @client.channels.select { |d| d['is_member'] == true }
+    log channels: @channels
+  end
+
+  def channel(id)
+    (@channels + @im_channels).find { |c| c['id'] == id }
   end
 
   def is_im_channel?(id)
-    @im_channel_ids.include?(id)
+    channel(id)['is_im'] == true
   end
 
   def bot_message?(data)
