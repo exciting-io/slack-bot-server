@@ -55,34 +55,7 @@ server.start
 
 Running this script will start a server and keep it running; you may wish to use a tool like [Foreman](http://ddollar.github.io/foreman/) to actually start it and manage it in production.
 
-### Writing a bot
-
-The provided example `SimpleBot` illustrates the main ways to build a bot:
-
-```ruby
-require 'slack_bot_server/bot'
-
-class SlackBotServer::SimpleBot < SlackBotServer::Bot
-  # Set the username displayed in Slack
-  username 'SimpleBot'
-
-  # Respond to mentions in the connected chat room (defaults to #general).
-  # As well as the normal data provided by Slack's API, we add the `message`,
-  # which is the `text` parameter with the username stripped out. For example,
-  # When a user sends 'simple_bot: how are you?', the `message` data contains
-  # only 'how are you'.
-  on_mention do |data|
-    reply text: "You said '#{data['message']}', and I'm frankly fascinated."
-  end
-
-  # Respond to messages sent via IM communication directly with the bot.
-  on_im do
-    reply text: "Hmm, OK, let me get back to you about that."
-  end
-end
-```
-
-### Advanced example
+### Advanced server example
 
 This is a more advanced example of a server script, based on the that used by [Harmonia](https://harmonia.io), the product from which this was extracted.
 
@@ -129,6 +102,49 @@ end
 # and we can add new bots by sending messages using the queue.
 server.start
 ```
+
+### Writing a bot
+
+The provided example `SimpleBot` illustrates the main ways to build a bot:
+
+```ruby
+require 'slack_bot_server/bot'
+
+class SlackBotServer::SimpleBot < SlackBotServer::Bot
+  # Set the username displayed in Slack
+  username 'SimpleBot'
+
+  # Respond to mentions in the connected chat room (defaults to #general).
+  # As well as the normal data provided by Slack's API, we add the `message`,
+  # which is the `text` parameter with the username stripped out. For example,
+  # When a user sends 'simple_bot: how are you?', the `message` data contains
+  # only 'how are you'.
+  on_mention do |data|
+    reply text: "You said '#{data['message']}', and I'm frankly fascinated."
+  end
+
+  # Respond to messages sent via IM communication directly with the bot.
+  on_im do
+    reply text: "Hmm, OK, let me get back to you about that."
+  end
+end
+```
+
+As well as the special `on_mention` and `on_im` blocks, there are a number
+of other hooks that you can use when writing a bot:
+
+* `on :message` -- will fire for every message that's received from Slack in
+  the rooms that this bot is a member of
+* `on :start` -- will fire when the bot establishes a connection to Slack
+  (note that periodic disconnections will occur, so this hook is best used
+  to gather data about the current state of Slack. You should not assume
+  this is the first time the bot has ever connected)
+* `on :finish` -- will fire when the bot is disconnected from Slack. This
+  may be because a disconnection happened, or might be because the bot was
+  removed from the server via the `remove_bot` command. You can check if
+  the bot was accidentally/intermittently disconnected via the `running?`
+  method, which will return true unless the bot was explicitly stopped.
+
 
 ### Managing bots
 

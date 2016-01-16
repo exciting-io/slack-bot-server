@@ -114,9 +114,7 @@ class SlackBotServer::Bot
     @client.on :close do |event|
       log "disconnected"
       @connected = false
-      if @running
-        start
-      end
+      run_callbacks(:finish)
     end
 
     @client.start_async
@@ -201,6 +199,12 @@ class SlackBotServer::Bot
 
   on :start do
     load_channels
+  end
+
+  on :finish do
+    if @running
+      start
+    end
   end
 
   def to_s
