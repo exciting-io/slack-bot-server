@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0
 
 ### Added
 - Allow bots to send a 'typing' message
