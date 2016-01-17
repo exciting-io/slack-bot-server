@@ -1,3 +1,8 @@
+## Unreleased
+
+### Changes
+- Re-use error raising from within Slack::Web::Api
+
 ## 0.4.1
 
 ### Changes

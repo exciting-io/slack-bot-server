@@ -37,8 +37,8 @@ class SlackBotServer::Bot
 
   attr_reader :key, :token, :client
 
-  # Raised if Slack rejected the token during authentication.
-  class InvalidToken < RuntimeError; end
+  # Raised if there was an error while trying to connect to Slack
+  class ConnectionError < Slack::Web::Api::Error; end
 
   # Create a new bot.
   # This is normally called from within the block passed to
@@ -56,8 +56,6 @@ class SlackBotServer::Bot
     @channels = []
     @connected = false
     @running = false
-
-    raise InvalidToken unless @client.web_client.auth_test['ok']
   end
 
   # Returns the username (for @ replying) of the bot user we are connected as,
@@ -192,6 +190,8 @@ class SlackBotServer::Bot
     end
 
     @client.start_async
+  rescue Slack::Web::Api::Error => e
+    raise ConnectionError.new(e.message, e.response)
   end
 
   # Stops the bot from running. You should not call this method; instead
