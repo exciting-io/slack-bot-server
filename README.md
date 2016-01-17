@@ -69,7 +69,7 @@ require 'harmonia/slack_bot'
 # Use a Redis-based queue to add/remove bots and to trigger
 # bot messages to be sent. In this case we connect to the same
 # redis instance as Resque, just for convenience.
-queue = SlackBotServer::RedisQueue.new(Resque.redis)
+queue = SlackBotServer::RedisQueue.new(redis: Resque.redis)
 
 server = SlackBotServer::Server.new(queue: queue)
 
@@ -161,7 +161,7 @@ control to add the token to the server.
 
 ```ruby
 # Somewhere within your application
-queue = SlackBotServer::RedisQueue.new(Redis.new)
+queue = SlackBotServer::RedisQueue.new(redis: Redis.new)
 slack_remote = SlackBotServer::RemoteControl.new(queue: queue)
 slack_remote.add_bot('user-accounts-slack-api-token')
 ```
