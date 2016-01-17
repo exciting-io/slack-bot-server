@@ -35,7 +35,7 @@ class SlackBotServer::Bot
   # The user ID of the special slack user +SlackBot+
   SLACKBOT_USER_ID = 'USLACKBOT'
 
-  attr_reader :key, :token
+  attr_reader :key, :token, :client
 
   # Raised if Slack rejected the token during authentication.
   class InvalidToken < RuntimeError; end
@@ -62,17 +62,17 @@ class SlackBotServer::Bot
 
   # Returns the username (for @ replying) of the bot user we are connected as,
   # e.g. +'simple_bot'+
-  def user
+  def bot_user_name
     @client.self['name']
   end
 
   # Returns the ID of the bot user we are connected as, e.g. +'U123456'+
-  def user_id
+  def bot_user_id
     @client.self['id']
   end
 
   # Returns the name of the team we are connected to, e.g. +'My Team'+
-  def team
+  def team_name
     @client.team['name']
   end
 
@@ -155,7 +155,7 @@ class SlackBotServer::Bot
 
     @client.on :open do |event|
       @connected = true
-      log "connected to '#{team}'"
+      log "connected to '#{team_name}'"
       run_callbacks(:start)
     end
 
@@ -327,7 +327,7 @@ class SlackBotServer::Bot
         debug on_message: data, bot_message: bot_message?(data)
         if !bot_message?(data) &&
            (data['text'] =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
-            data['text'] =~ /\A(<@#{user_id}>)[\s\:](.*)/)
+            data['text'] =~ /\A(<@#{bot_user_id}>)[\s\:](.*)/)
           message = $2.strip
           @last_received_data = data.merge('message' => message)
           instance_exec(@last_received_data, &block)
@@ -392,7 +392,7 @@ class SlackBotServer::Bot
     else
       args.map { |a| a.is_a?(String) ? a : a.inspect }.join(", ")
     end
-    "[BOT/#{user}] #{text}"
+    "[BOT/#{bot_user_name}] #{text}"
   end
 
   def load_channels
@@ -414,13 +414,13 @@ class SlackBotServer::Bot
   def bot_message?(data)
     data['subtype'] == 'bot_message' ||
     data['user'] == SLACKBOT_USER_ID ||
-    data['user'] == user_id ||
+    data['user'] == bot_user_id ||
     change_to_previous_bot_message?(data)
   end
 
   def change_to_previous_bot_message?(data)
     data['subtype'] == 'message_changed' &&
-    data['previous_message']['user'] == user_id
+    data['previous_message']['user'] == bot_user_id
   end
 
   def rtm_incompatible_message?(data)
@@ -436,7 +436,7 @@ class SlackBotServer::Bot
   end
 
   def mention_keywords
-    self.class.mention_keywords || [user]
+    self.class.mention_keywords || [bot_user_name]
   end
 
   def symbolize_keys(hash)

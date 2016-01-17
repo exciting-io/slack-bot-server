@@ -26,15 +26,15 @@ RSpec.describe SlackBotServer::Bot do
   end
 
   specify "#user returns the name of the bot" do
-    expect(bot_instance.user).to eq 'test_bot'
+    expect(bot_instance.bot_user_name).to eq 'test_bot'
   end
 
   specify "#user_id returns the user id of the bot" do
-    expect(bot_instance.user_id).to eq bot_user_id
+    expect(bot_instance.bot_user_id).to eq bot_user_id
   end
 
   specify "#team returns the team name the bot is connected to" do
-    expect(bot_instance.team).to eq 'team name'
+    expect(bot_instance.team_name).to eq 'team name'
   end
 
   specify "#team_id returns the id of the team the bot is connected to" do
