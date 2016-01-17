@@ -1,3 +1,8 @@
+## 0.4.1
+
+### Changes
+- Fixed detection of RTM-compatible messages
+
 ## 0.4.0
 
 ### Added

@@ -424,11 +424,11 @@ class SlackBotServer::Bot
   end
 
   def rtm_incompatible_message?(data)
-    data[:attachments].nil? ||
-    data[:username].nil? ||
-    data[:icon_url].nil? ||
-    data[:icon_emoji].nil? ||
-    data[:channel].match(/^#/).nil?
+    !(data[:attachments].nil? &&
+      data[:username].nil? &&
+      data[:icon_url].nil? &&
+      data[:icon_emoji].nil? &&
+      data[:channel].match(/^#/).nil?)
   end
 
   def default_message_options

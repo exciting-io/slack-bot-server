@@ -347,7 +347,7 @@ RSpec.describe SlackBotServer::Bot do
         allow(check).to receive(:call)
         bot_instance do
           on_im do |message|
-            reply text: 'hello'
+            reply text: 'hello', username: 'Dave'
           end
         end
 
