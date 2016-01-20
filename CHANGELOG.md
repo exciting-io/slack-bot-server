@@ -2,6 +2,7 @@
 
 ### Changes
 - Re-use error raising from within Slack::Web::Api
+- Prevent bots with the same key as existing bots from being added (@keydunov)
 
 ## 0.4.1
 
