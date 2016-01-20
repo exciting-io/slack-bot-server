@@ -93,6 +93,16 @@ RSpec.describe SlackBotServer::Server do
       server.add_bot(bot)
       expect(server.bot('key')).to eq bot
     end
+
+    it "does not add the bot if one already exists" do
+      server.add_bot(bot)
+
+      duplicate_bot = double('duplicate-bot', key: bot.key, start: nil)
+      allow(bot_factory).to receive(:build).and_return(duplicate_bot)
+
+      server.add_bot
+      expect(server.bot(bot.key)).to eq bot
+    end
   end
 
   describe "#remove_bot" do
