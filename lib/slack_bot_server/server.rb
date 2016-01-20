@@ -99,7 +99,7 @@ class SlackBotServer::Server
   # @see #on_add
   def add_bot(*args)
     bot = @add_proc.call(*args)
-    if bot.respond_to?(:start)
+    if bot.respond_to?(:start) && !bot(bot.key)
       log "adding bot #{bot}"
       @bots[bot.key.to_sym] = bot
       bot.start if @running
