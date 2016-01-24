@@ -354,6 +354,7 @@ class SlackBotServer::Bot
 
   on :finish do
     if @running
+      @client = ::Slack::RealTime::Client.new(token: @token)
       start
     end
   end
