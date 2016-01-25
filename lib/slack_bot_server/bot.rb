@@ -51,7 +51,6 @@ class SlackBotServer::Bot
   def initialize(token:, key: nil)
     @token = token
     @key = key || @token
-    @client = ::Slack::RealTime::Client.new(token: @token)
     @im_channels = []
     @channels = []
     @connected = false
@@ -149,6 +148,7 @@ class SlackBotServer::Bot
   # when it is ready for the bot to connect
   # @see Server#start
   def start
+    @client = ::Slack::RealTime::Client.new(token: @token)
     @running = true
 
     @client.on :open do |event|
@@ -353,10 +353,7 @@ class SlackBotServer::Bot
   end
 
   on :finish do
-    if @running
-      @client = ::Slack::RealTime::Client.new(token: @token)
-      start
-    end
+    start if @running
   end
 
   # Returns a String representation of this {Bot}
