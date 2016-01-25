@@ -394,11 +394,11 @@ class SlackBotServer::Bot
   end
 
   def load_channels
-    log "Loading channels"
+    debug "Loading channels"
     @im_channels = @client.ims
-    log im_channels: @im_channels
+    debug im_channels: @im_channels
     @channels = @client.channels.select { |d| d['is_member'] == true }
-    log channels: @channels
+    debug channels: @channels
   end
 
   def channel(id)
