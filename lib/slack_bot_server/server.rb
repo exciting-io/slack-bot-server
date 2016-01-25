@@ -136,7 +136,7 @@ class SlackBotServer::Server
   def process_instruction(instruction)
     type, *args = instruction
     bot_key = args.shift
-    if type == :add_bot
+    if type.to_sym == :add_bot
       log "adding bot: #{bot_key} #{args.inspect}"
       add_bot(bot_key, *args)
     else
