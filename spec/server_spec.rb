@@ -32,7 +32,7 @@ RSpec.describe SlackBotServer::Server do
       it "calls broadcast on the bot instance matching the given key with the message data" do
         bot = double('bot')
         allow(server).to receive(:bot).with('bot-key').and_return(bot)
-        expect(bot).to receive(:broadcast).with(text: 'hello')
+        expect(bot).to receive(:broadcast).with('text' => 'hello')
         enqueue_instruction :broadcast, 'bot-key', text: 'hello'
         run_server
       end
@@ -42,7 +42,7 @@ RSpec.describe SlackBotServer::Server do
       it "calls say on the bot instance matching the given key with the message data" do
         bot = double('bot')
         allow(server).to receive(:bot).with('bot-key').and_return(bot)
-        expect(bot).to receive(:say).with(text: 'hello')
+        expect(bot).to receive(:say).with('text' => 'hello')
         enqueue_instruction :say, 'bot-key', text: 'hello'
         run_server
       end
@@ -52,7 +52,7 @@ RSpec.describe SlackBotServer::Server do
       it "calls say_to on the bot instance matching the given key with the message data" do
         bot = double('bot')
         allow(server).to receive(:bot).with('bot-key').and_return(bot)
-        expect(bot).to receive(:say_to).with('userid', text: 'hello')
+        expect(bot).to receive(:say_to).with('userid', 'text' => 'hello')
         enqueue_instruction :say_to, 'bot-key', 'userid', text: 'hello'
         run_server
       end
@@ -137,7 +137,7 @@ RSpec.describe SlackBotServer::Server do
   private
 
   def enqueue_instruction(*args)
-    allow(queue).to receive(:pop).and_return(args)
+    allow(queue).to receive(:pop).and_return(MultiJson.load(MultiJson.dump(args)))
   end
 
   def stub_running_server
