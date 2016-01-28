@@ -53,7 +53,16 @@ end
 server.start
 ```
 
-Running this script will start a server and keep it running; you may wish to use a tool like [Foreman](http://ddollar.github.io/foreman/) to actually start it and manage it in production.
+If you're using Rails, I'd suggest you create your script as `bin/slack_server` (i.e. a file called `slack_server` in the `bin` directory you already have)
+
+Running this script will start a server and keep it running; you may wish to use a tool like [Foreman](http://ddollar.github.io/foreman/) to actually start it and manage it in production. Here's a sample `Procfile`:
+
+```
+web: bundle exec rails server
+slack_server: bundle exec rails runner bin/slack_server
+```
+
+By running the `bin/slack_server` script using `rails runner`, your bots get access to all the Rails models and libraries even when they are running outside of the main Rails web processes.
 
 ### Advanced server example
 
