@@ -11,7 +11,7 @@ This server is designed to hopefully make it easier to manage running bots for m
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'slack_bot_server'
+gem 'slack-bot-server'
 ```
 
 And then execute:
@@ -20,7 +20,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install slack_bot_server
+    $ gem install slack-bot-server
 
 ## Usage
 
