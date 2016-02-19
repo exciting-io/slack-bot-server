@@ -132,7 +132,7 @@ class SlackBotServer::SimpleBot < SlackBotServer::Bot
   # only 'how are you'.
   on_mention do |data|
     if data['message'] == 'who are you'
-      reply text: "I am #{user} (user id: #{user_id}, connected to team #{team} with team id #{team_id}"
+      reply text: "I am #{bot_user_name} (user id: #{bot_user_id}, connected to team #{team_name} with team id #{team_id}"
     else
       reply text: "You said '#{data['message']}', and I'm frankly fascinated."
     end
