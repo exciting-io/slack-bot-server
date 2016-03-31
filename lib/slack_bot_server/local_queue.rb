@@ -21,4 +21,10 @@ class SlackBotServer::LocalQueue
     value = @queue.pop(true) rescue ThreadError
     value == ThreadError ? nil : value
   end
+
+  # Clear the queue
+  # @return [nil]
+  def clear
+    @queue = Queue.new
+  end
 end

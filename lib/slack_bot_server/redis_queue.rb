@@ -34,4 +34,10 @@ class SlackBotServer::RedisQueue
       nil
     end
   end
+
+  # Clears the queue
+  # @return [nil]
+  def clear
+    @redis.del @key
+  end
 end

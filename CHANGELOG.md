@@ -1,5 +1,12 @@
 ## Unreleased
 
+## 0.4.3
+
+### Changes
+- Add `clear` method to queues
+
+## 0.4.2
+
 ### Changes
 - Re-use error raising from within Slack::Web::Api
 - Prevent bots with the same key as existing bots from being added (@keydunov)
