@@ -331,10 +331,6 @@ class SlackBotServer::Bot
     end
   end
 
-  # on :start do
-  #   load_channels
-  # end
-
   on :finish do
     start if @running
   end
