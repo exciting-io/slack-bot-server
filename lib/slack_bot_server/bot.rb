@@ -111,7 +111,7 @@ class SlackBotServer::Bot
   # @param options [Hash] As {#say}, although the +:channel+ option is
   #    redundant
   def reply(options)
-    channel = @last_received_data.channel
+    channel = @last_received_user_message.channel
     say(options.merge(channel: channel))
   end
 
@@ -129,7 +129,7 @@ class SlackBotServer::Bot
   # @param options [Hash] can contain +:channel+, which should be an ID; if no options
   #    are provided, the channel from the most recently recieved message is used
   def typing(options={})
-    last_received_channel = @last_received_data ? @last_received_data.channel : nil
+    last_received_channel = @last_received_user_message ? @last_received_user_message.channel : nil
     default_options = {channel: last_received_channel}
     @client.typing(default_options.merge(options))
   end
@@ -158,6 +158,7 @@ class SlackBotServer::Bot
     @client.on :message do |data|
       begin
         debug message: data
+        @last_received_user_message = data if user_message?(data)
         handle_message(data)
       rescue => e
         log error: e
@@ -311,8 +312,8 @@ class SlackBotServer::Bot
            (data.text =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
             data.text =~ /\A(<@#{bot_user_id}>)[\s\:](.*)/)
           message = $2.strip
-          @last_received_data = data.merge(message: message)
-          instance_exec(@last_received_data, &block)
+          @last_received_user_message.merge!(message: message)
+          instance_exec(@last_received_user_message, &block)
         end
       end
     end
@@ -322,9 +323,9 @@ class SlackBotServer::Bot
     def on_im(&block)
       on(:message) do |data|
         debug on_im: data, bot_message: bot_message?(data), is_im_channel: is_im_channel?(data.channel)
-        if is_im_channel?(data.channel) && !bot_message?(data)
-          @last_received_data = data.merge(message: data.text)
-          instance_exec(@last_received_data, &block)
+        if !bot_message?(data) && is_im_channel?(data.channel)
+          @last_received_user_message.merge!(message: data.text)
+          instance_exec(@last_received_user_message, &block)
         end
       end
     end
@@ -389,6 +390,10 @@ class SlackBotServer::Bot
   def change_to_previous_bot_message?(data)
     data.subtype == 'message_changed' &&
     data.previous_message.user == bot_user_id
+  end
+
+  def user_message?(data)
+    !bot_message?(data) && data.subtype.nil?
   end
 
   def rtm_incompatible_message?(data)
