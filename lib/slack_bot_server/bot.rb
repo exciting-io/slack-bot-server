@@ -61,22 +61,22 @@ class SlackBotServer::Bot
   # Returns the username (for @ replying) of the bot user we are connected as,
   # e.g. +'simple_bot'+
   def bot_user_name
-    @client.self.name
+    client.self.name
   end
 
   # Returns the ID of the bot user we are connected as, e.g. +'U123456'+
   def bot_user_id
-    @client.self.id
+    client.self.id
   end
 
   # Returns the name of the team we are connected to, e.g. +'My Team'+
   def team_name
-    @client.team.name
+    client.team.name
   end
 
   # Returns the ID of the team we are connected to, e.g. +'T234567'+
   def team_id
-    @client.team.id
+    client.team.id
   end
 
   # Send a message to Slack
@@ -93,10 +93,10 @@ class SlackBotServer::Bot
 
     if rtm_incompatible_message?(message)
       debug "Sending via Web API", message
-      @client.web_client.chat_postMessage(message)
+      client.web_client.chat_postMessage(message)
     else
       debug "Sending via RTM API", message
-      @client.message(message)
+      client.message(message)
     end
   end
 
@@ -104,7 +104,7 @@ class SlackBotServer::Bot
   # @param options [Hash] As {#say}, although the +:channel+ option is
   #   redundant
   def broadcast(options)
-    @client.channels.each do |id, _|
+    client.channels.each do |id, _|
       say(options.merge(channel: id))
     end
   end
@@ -123,7 +123,7 @@ class SlackBotServer::Bot
   # @param options [Hash] As {#say}, although the +:channel+ option is
   #    redundant
   def say_to(user_id, options)
-    result = @client.web_client.im_open(user: user_id)
+    result = client.web_client.im_open(user: user_id)
     channel = result.channel.id
     say(options.merge(channel: channel))
   end
@@ -134,14 +134,14 @@ class SlackBotServer::Bot
   def typing(options={})
     last_received_channel = @last_received_user_message ? @last_received_user_message.channel : nil
     default_options = {channel: last_received_channel}
-    @client.typing(default_options.merge(options))
+    client.typing(default_options.merge(options))
   end
 
   # Call a method directly on the Slack web API (via Slack::Web::Client).
   # Useful for debugging only.
   def call(method, args)
     args.symbolize_keys!
-    @client.web_client.send(method, args)
+    client.web_client.send(method, args)
   end
 
   # Starts the bot running.
@@ -152,13 +152,13 @@ class SlackBotServer::Bot
     @client = ::Slack::RealTime::Client.new(token: @token)
     @running = true
 
-    @client.on :open do |event|
+    client.on :open do |event|
       @connected = true
       log "connected to '#{team_name}'"
       run_callbacks(:start)
     end
 
-    @client.on :message do |data|
+    client.on :message do |data|
       begin
         debug message: data
         @last_received_user_message = data if user_message?(data)
@@ -168,15 +168,15 @@ class SlackBotServer::Bot
       end
     end
 
-    @client.on :close do |event|
+    client.on :close do |event|
       log "disconnected"
       @connected = false
       run_callbacks(:finish)
     end
 
-    register_low_level_callbacks_on(@client)
+    register_low_level_callbacks
 
-    @client.start_async
+    client.start_async
   rescue Slack::Web::Api::Error => e
     raise ConnectionError.new(e.message, e.response)
   end
@@ -187,7 +187,7 @@ class SlackBotServer::Bot
   def stop
     log "closing connection"
     @running = false
-    @client.stop!
+    client.stop!
     log "closed"
   end
 
@@ -356,6 +356,8 @@ class SlackBotServer::Bot
 
   private
 
+  attr_reader :client
+
   def handle_message(data)
     run_callbacks(data.type, data)
   end
@@ -368,11 +370,11 @@ class SlackBotServer::Bot
     end
   end
 
-  def register_low_level_callbacks_on(client)
+  def register_low_level_callbacks
     self.class.low_level_callbacks.each do |(type, callback)|
       client.on(type) do |*args|
         begin
-          callback.call(*args)
+          instance_exec(*args, &callback)
         rescue => e
           log_error e
         end
@@ -381,7 +383,7 @@ class SlackBotServer::Bot
   end
 
   def is_im_channel?(id)
-    @client.ims[id] != nil
+    client.ims[id] != nil
   end
 
   def bot_message?(data)

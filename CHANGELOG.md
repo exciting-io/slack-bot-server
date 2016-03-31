@@ -1,5 +1,14 @@
 ## Unreleased
 
+## 0.4.6
+
+### Added
+- New `client` method for accessing the underlying Slack ruby client; this is useful for getting the channels or users (e.g. `client.channels` or `client.users`).
+
+### Changes
+- Evaluate `on_slack_event` blocks against the bot instance, rather than the class.
+
+
 ## 0.4.5
 
 ### Added
