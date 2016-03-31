@@ -134,7 +134,7 @@ class SlackBotServer::SimpleBot < SlackBotServer::Bot
     if data['message'] == 'who are you'
       reply text: "I am #{bot_user_name} (user id: #{bot_user_id}, connected to team #{team_name} with team id #{team_id}"
     else
-      reply text: "You said '#{data['message']}', and I'm frankly fascinated."
+      reply text: "You said '#{data.message}', and I'm frankly fascinated."
     end
   end
 

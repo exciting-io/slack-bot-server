@@ -51,8 +51,6 @@ class SlackBotServer::Bot
   def initialize(token:, key: nil)
     @token = token
     @key = key || @token
-    @im_channels = []
-    @channels = []
     @connected = false
     @running = false
   end
@@ -60,22 +58,22 @@ class SlackBotServer::Bot
   # Returns the username (for @ replying) of the bot user we are connected as,
   # e.g. +'simple_bot'+
   def bot_user_name
-    @client.self['name']
+    @client.self.name
   end
 
   # Returns the ID of the bot user we are connected as, e.g. +'U123456'+
   def bot_user_id
-    @client.self['id']
+    @client.self.id
   end
 
   # Returns the name of the team we are connected to, e.g. +'My Team'+
   def team_name
-    @client.team['name']
+    @client.team.name
   end
 
   # Returns the ID of the team we are connected to, e.g. +'T234567'+
   def team_id
-    @client.team['id']
+    @client.team.id
   end
 
   # Send a message to Slack
@@ -103,8 +101,8 @@ class SlackBotServer::Bot
   # @param options [Hash] As {#say}, although the +:channel+ option is
   #   redundant
   def broadcast(options)
-    @channels.each do |channel|
-      say(options.merge(channel: channel['id']))
+    @client.channels.each do |id, _|
+      say(options.merge(channel: id))
     end
   end
 
@@ -113,7 +111,7 @@ class SlackBotServer::Bot
   # @param options [Hash] As {#say}, although the +:channel+ option is
   #    redundant
   def reply(options)
-    channel = @last_received_data['channel']
+    channel = @last_received_data.channel
     say(options.merge(channel: channel))
   end
 
@@ -123,7 +121,7 @@ class SlackBotServer::Bot
   #    redundant
   def say_to(user_id, options)
     result = @client.web_client.im_open(user: user_id)
-    channel = result['channel']['id']
+    channel = result.channel.id
     say(options.merge(channel: channel))
   end
 
@@ -131,7 +129,7 @@ class SlackBotServer::Bot
   # @param options [Hash] can contain +:channel+, which should be an ID; if no options
   #    are provided, the channel from the most recently recieved message is used
   def typing(options={})
-    last_received_channel = @last_received_data ? @last_received_data['channel'] : nil
+    last_received_channel = @last_received_data ? @last_received_data.channel : nil
     default_options = {channel: last_received_channel}
     @client.typing(default_options.merge(options))
   end
@@ -165,22 +163,6 @@ class SlackBotServer::Bot
         log error: e
         log backtrace: e.backtrace
       end
-    end
-
-    @client.on :im_created do |data|
-      log "Adding new IM channel", data['channel']
-      @im_channels << data['channel']
-    end
-
-    @client.on :channel_joined do |data|
-      log "Adding new channel", data['channel']
-      @channels << data['channel']
-    end
-
-    @client.on :channel_left do |data|
-      channel_id = data['channel']
-      log "Removing channel: #{channel_id}"
-      @channels.delete_if { |c| c['id'] == channel_id }
     end
 
     @client.on :close do |event|
@@ -326,10 +308,10 @@ class SlackBotServer::Bot
       on(:message) do |data|
         debug on_message: data, bot_message: bot_message?(data)
         if !bot_message?(data) &&
-           (data['text'] =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
-            data['text'] =~ /\A(<@#{bot_user_id}>)[\s\:](.*)/)
+           (data.text =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
+            data.text =~ /\A(<@#{bot_user_id}>)[\s\:](.*)/)
           message = $2.strip
-          @last_received_data = data.merge('message' => message)
+          @last_received_data = data.merge(message: message)
           instance_exec(@last_received_data, &block)
         end
       end
@@ -339,18 +321,18 @@ class SlackBotServer::Bot
     # to this bot
     def on_im(&block)
       on(:message) do |data|
-        debug on_im: data, bot_message: bot_message?(data), is_im_channel: is_im_channel?(data['channel'])
-        if is_im_channel?(data['channel']) && !bot_message?(data)
-          @last_received_data = data.merge('message' => data['text'])
+        debug on_im: data, bot_message: bot_message?(data), is_im_channel: is_im_channel?(data.channel)
+        if is_im_channel?(data.channel) && !bot_message?(data)
+          @last_received_data = data.merge(message: data.text)
           instance_exec(@last_received_data, &block)
         end
       end
     end
   end
 
-  on :start do
-    load_channels
-  end
+  # on :start do
+  #   load_channels
+  # end
 
   on :finish do
     start if @running
@@ -365,7 +347,7 @@ class SlackBotServer::Bot
   private
 
   def handle_message(data)
-    run_callbacks(data['type'], data)
+    run_callbacks(data.type, data)
   end
 
   def run_callbacks(type, data=nil)
@@ -393,32 +375,20 @@ class SlackBotServer::Bot
     "[BOT/#{bot_user_name}] #{text}"
   end
 
-  def load_channels
-    debug "Loading channels"
-    @im_channels = @client.ims
-    debug im_channels: @im_channels
-    @channels = @client.channels.select { |d| d['is_member'] == true }
-    debug channels: @channels
-  end
-
-  def channel(id)
-    (@channels + @im_channels).find { |c| c['id'] == id }
-  end
-
   def is_im_channel?(id)
-    channel(id)['is_im'] == true
+    @client.ims[id] != nil
   end
 
   def bot_message?(data)
-    data['subtype'] == 'bot_message' ||
-    data['user'] == SLACKBOT_USER_ID ||
-    data['user'] == bot_user_id ||
+    data.subtype == 'bot_message' ||
+    data.user == SLACKBOT_USER_ID ||
+    data.user == bot_user_id ||
     change_to_previous_bot_message?(data)
   end
 
   def change_to_previous_bot_message?(data)
-    data['subtype'] == 'message_changed' &&
-    data['previous_message']['user'] == bot_user_id
+    data.subtype == 'message_changed' &&
+    data.previous_message.user == bot_user_id
   end
 
   def rtm_incompatible_message?(data)

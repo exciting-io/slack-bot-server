@@ -4,6 +4,7 @@
 
 ### Changes
 - Add `clear` method to queues
+- Upgrate `slack-ruby-client` dependency to latest version
 
 ## 0.4.2
 

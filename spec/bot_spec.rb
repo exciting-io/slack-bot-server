@@ -104,7 +104,8 @@ RSpec.describe SlackBotServer::Bot do
     end
 
     it "can send messages as DMs to a specific user" do
-      expect(slack_web_api).to receive(:im_open).with(hash_including(user: bot_user_id)).and_return({'channel' => {'id' => 'D123'}})
+      reply = double('im_open_reply', channel: double('channel message', id: 'D123'))
+      expect(slack_web_api).to receive(:im_open).with(hash_including(user: bot_user_id)).and_return(reply)
       expect(slack_web_api).to receive(:chat_postMessage).with(hash_including(channel: 'D123', text: 'hello'))
 
       bot.say_to(bot_user_id, text: 'hello', username: 'Bot')
