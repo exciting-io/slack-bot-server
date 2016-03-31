@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.4.4
+
 ### Changes
 - Add new bot-private API method `user_message?(data)`, which returns true if the message is some utterance from a user
 - Allow replying from the low-level `on(:message)` callback, although caution should be exercised when doing this (i.e. make sure you aren't replying to bot or other low-level API messages!)
