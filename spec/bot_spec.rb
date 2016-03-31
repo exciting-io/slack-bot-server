@@ -356,6 +356,20 @@ RSpec.describe SlackBotServer::Bot do
         send_message('channel' => channel_id, 'text' => 'hi')
       end
     end
+
+    context 'on_slack_event' do
+      it 'registers the callback with the underlying slack client' do
+        instance_check = check
+        allow(check).to receive(:call)
+        bot_instance do
+          on_slack_event :team_join do |data|
+            instance_check.call(data)
+          end
+        end
+
+        stub_websocket.trigger(:message, double('event', data: MultiJson.dump({'type' => 'team_join', 'data' => 'blah', 'user' => {'id' => bot_user_id}})))
+      end
+    end
   end
 
   private

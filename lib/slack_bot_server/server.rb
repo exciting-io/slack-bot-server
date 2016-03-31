@@ -1,6 +1,7 @@
 require 'slack_bot_server/bot'
 require 'slack_bot_server/simple_bot'
 require 'slack_bot_server/redis_queue'
+require 'slack_bot_server/logging'
 require 'eventmachine'
 
 # Implements a server for running multiple Slack bots. Bots can be
@@ -48,6 +49,8 @@ require 'eventmachine'
 #   itself
 #
 class SlackBotServer::Server
+  include SlackBotServer::Logging
+
   attr_reader :queue
 
   # Creates a new {Server}
@@ -164,15 +167,10 @@ class SlackBotServer::Server
     end
   end
 
-  def log(message)
-    text = message.is_a?(String) ? message : message.inspect
-    SlackBotServer.logger.info(text)
-  end
-
-  def log_error(e)
-    SlackBotServer.logger.warn("Error in server: #{e} - #{e.message}")
-    SlackBotServer.logger.warn(e.backtrace.join("\n"))
-  end
+  # def log(message)
+  #   text = message.is_a?(String) ? message : message.inspect
+  #   SlackBotServer.logger.info(text)
+  # end
 
   def with_bot(key)
     if bot = bot(key)

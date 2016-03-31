@@ -1,3 +1,4 @@
+require 'slack_bot_server/logging'
 require 'slack'
 require 'slack-ruby-client'
 
@@ -31,6 +32,8 @@ require 'slack-ruby-client'
 #   end
 #
 class SlackBotServer::Bot
+  include SlackBotServer::Logging
+  extend SlackBotServer::Logging
 
   # The user ID of the special slack user +SlackBot+
   SLACKBOT_USER_ID = 'USLACKBOT'
@@ -161,8 +164,7 @@ class SlackBotServer::Bot
         @last_received_user_message = data if user_message?(data)
         handle_message(data)
       rescue => e
-        log error: e
-        log backtrace: e.backtrace
+        log_error e
       end
     end
 
@@ -171,6 +173,8 @@ class SlackBotServer::Bot
       @connected = false
       run_callbacks(:finish)
     end
+
+    register_low_level_callbacks_on(@client)
 
     @client.start_async
   rescue Slack::Web::Api::Error => e
@@ -329,6 +333,15 @@ class SlackBotServer::Bot
         end
       end
     end
+
+    def low_level_callbacks
+      @low_level_callbacks ||= []
+    end
+
+    # Define a callback to use when a low-level slack event is fired
+    def on_slack_event(name, &block)
+      self.low_level_callbacks << [name, block]
+    end
   end
 
   on :finish do
@@ -355,21 +368,16 @@ class SlackBotServer::Bot
     end
   end
 
-  def log(*args)
-    SlackBotServer.logger.info(log_string(*args))
-  end
-
-  def debug(*args)
-    SlackBotServer.logger.debug(log_string(*args))
-  end
-
-  def log_string(*args)
-    text = if args.length == 1 && args.first.is_a?(String)
-      args.first
-    else
-      args.map { |a| a.is_a?(String) ? a : a.inspect }.join(", ")
+  def register_low_level_callbacks_on(client)
+    self.class.low_level_callbacks.each do |(type, callback)|
+      client.on(type) do |*args|
+        begin
+          callback.call(*args)
+        rescue => e
+          log_error e
+        end
+      end
     end
-    "[BOT/#{bot_user_name}] #{text}"
   end
 
   def is_im_channel?(id)

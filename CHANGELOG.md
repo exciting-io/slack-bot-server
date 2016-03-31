@@ -1,16 +1,28 @@
 ## Unreleased
 
+## 0.4.5
+
+### Added
+- Add `on_slack_event` for adding low-level event callbacks like `team_join` or `presence_changed`
+
+
 ## 0.4.4
 
-### Changes
+### Added
 - Add new bot-private API method `user_message?(data)`, which returns true if the message is some utterance from a user
+
+### Changes
 - Allow replying from the low-level `on(:message)` callback, although caution should be exercised when doing this (i.e. make sure you aren't replying to bot or other low-level API messages!)
+
 
 ## 0.4.3
 
-### Changes
+### Added
 - Add `clear` method to queues
+
+### Changes
 - Upgrate `slack-ruby-client` dependency to latest version
+
 
 ## 0.4.2
 
@@ -18,10 +30,12 @@
 - Re-use error raising from within Slack::Web::Api
 - Prevent bots with the same key as existing bots from being added (@keydunov)
 
+
 ## 0.4.1
 
 ### Changes
 - Fixed detection of RTM-compatible messages
+
 
 ## 0.4.0
 
