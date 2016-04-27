@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Fixed
+- Bots added using numeric keys now work
+
+
 ## 0.4.6
 
 ### Added

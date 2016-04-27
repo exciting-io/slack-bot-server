@@ -93,7 +93,7 @@ class SlackBotServer::Server
   # @param key [String] the key of the bot we're looking for
   # @return Bot
   def bot(key)
-    @bots[key.to_sym]
+    @bots[key]
   end
 
   # Adds a bot to this server
@@ -104,7 +104,7 @@ class SlackBotServer::Server
     bot = @add_proc.call(*args)
     if bot.respond_to?(:start) && !bot(bot.key)
       log "adding bot #{bot}"
-      @bots[bot.key.to_sym] = bot
+      @bots[bot.key] = bot
       bot.start if @running
     end
   rescue => e
@@ -117,7 +117,7 @@ class SlackBotServer::Server
   def remove_bot(key)
     if (bot = bot(key))
       bot.stop
-      @bots.delete(key.to_sym)
+      @bots.delete(key)
     end
   rescue => e
     log_error(e)
