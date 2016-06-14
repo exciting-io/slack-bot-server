@@ -213,7 +213,7 @@ Up to this point, your bots could only respond to mentions and IM messages, but 
 We can tell a bot to send a message into its default room fairly simply using the remote:
 
 ```ruby
-slack_remote.say('bot-key', text: 'I have an important announcement to make!')
+slack_remote.say('bot-key', channel: '#general', text: 'I have an important announcement to make!')
 ```
 
 ## Development
