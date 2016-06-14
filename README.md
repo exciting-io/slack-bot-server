@@ -22,6 +22,14 @@ Or install it yourself as:
 
     $ gem install slack-bot-server
 
+
+### Optional queue stores
+
+The default queueing mechanism uses Redis as its underlying store, but you are not tied to this - any object that has the API `#push`, `#pop` and `#clear` can be used -- and so Redis is not an explicit dependency.
+
+However, if you are happy to use Redis (as the examples below to), you shouldensure to add the `redis` gem to your `Gemfile` or your local rubygems installation.
+
+
 ## Usage
 
 To use the server in your application, you'll need to create a short script that sets up your integration and then runs the server process. Here's a simple example:
@@ -209,4 +217,3 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/exciti
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
