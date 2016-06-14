@@ -168,6 +168,17 @@ of other hooks that you can use when writing a bot:
   the bot was accidentally/intermittently disconnected via the `running?`
   method, which will return true unless the bot was explicitly stopped.
 
+### Slack App setup
+
+When you create your Slack App configuration at https://api.slack.com, it is
+recommended that you include _at least_ the following scopes:
+
+* `identify`
+* `bot`
+* `chat:write:bot`
+
+Depending on what your own app plans to do, of course, you may need other scopes
+too.
 
 ### Managing bots
 
