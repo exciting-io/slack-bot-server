@@ -178,6 +178,8 @@ control to add the token to the server.
 
 ```ruby
 # Somewhere within your application
+require 'slack_bot_server/remote_control'
+
 queue = SlackBotServer::RedisQueue.new(redis: Redis.new)
 slack_remote = SlackBotServer::RemoteControl.new(queue: queue)
 slack_remote.add_bot('user-accounts-slack-api-token')
