@@ -5,6 +5,14 @@ RSpec.describe SlackBotServer::Server do
   let(:queue) { double('queue') }
   let(:server) { described_class.new(queue: queue)}
 
+  describe "when not running" do
+    it "does not start bots that are added" do
+      bot = double(:bot, key: 'key')
+      allow(bot).to receive(:start).never
+      server.add_bot(bot)
+    end
+  end
+
   describe "sending instructions via the queue" do
     include RSpec::EM::FakeClock
 
@@ -102,6 +110,11 @@ RSpec.describe SlackBotServer::Server do
 
       server.add_bot
       expect(server.bot(bot.key)).to eq bot
+    end
+
+    it "does not crash if starting the bot raises an error" do
+      allow(bot).to receive(:start).and_raise(RuntimeError.new)
+      expect { server.add_bot(bot) }.not_to raise_error
     end
   end
 

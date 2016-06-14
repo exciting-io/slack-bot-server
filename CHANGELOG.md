@@ -2,7 +2,7 @@
 
 ### Fixed
 - Bots added using numeric keys now work
-
+- Bots added before the server starts which raise errors when started should not longer take the server down
 
 ## 0.4.6
 

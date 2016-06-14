@@ -79,7 +79,13 @@ class SlackBotServer::Server
   def start
     EM.run do
       @running = true
-      @bots.each { |key, bot| bot.start }
+      @bots.each do |key, bot|
+        begin
+          bot.start
+        rescue => e
+          log_error(e)
+        end
+      end
       listen_for_instructions if queue
     end
   end
