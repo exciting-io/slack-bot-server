@@ -27,7 +27,7 @@ Or install it yourself as:
 
 The default queueing mechanism uses Redis as its underlying store, but you are not tied to this - any object that has the API `#push`, `#pop` and `#clear` can be used -- and so Redis is not an explicit dependency.
 
-However, if you are happy to use Redis (as the examples below to), you shouldensure to add the `redis` gem to your `Gemfile` or your local rubygems installation.
+However, if you are happy to use Redis (as the examples below to), you should ensure to add the `redis` gem to your `Gemfile` or your local rubygems installation.
 
 
 ## Usage
