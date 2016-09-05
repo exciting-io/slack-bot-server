@@ -171,6 +171,9 @@ class SlackBotServer::Server
         end
       end
     end
+  rescue => e
+    log "Error processing instruction: #{instruction.inspect}"
+    raise e
   end
 
   # def log(message)
