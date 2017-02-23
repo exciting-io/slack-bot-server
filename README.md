@@ -74,7 +74,7 @@ By running the `bin/slack_server` script using `rails runner`, your bots get acc
 
 ### Advanced server example
 
-This is a more advanced example of a server script, based on the that used by [Harmonia](https://harmonia.io), the product from which this was extracted.
+This is a more advanced example of a server script, based on the that used by [Harmonia][harmonia], the product from which this was extracted.
 
 ```ruby
 #!/usr/bin/env ruby
@@ -168,17 +168,135 @@ of other hooks that you can use when writing a bot:
   the bot was accidentally/intermittently disconnected via the `running?`
   method, which will return true unless the bot was explicitly stopped.
 
-### Slack App setup
+## Slack App setup
 
-When you create your Slack App configuration at https://api.slack.com, it is
-recommended that you include _at least_ the following scopes:
+As well as defining your bots in your own application, you need to tell Slack
+itself about your app. You can do this at https://api.slack.com. You'll want to
+create an "Installable Slack apps for any team to use".
 
-* `identify`
-* `bot`
-* `chat:write:bot`
+There's some amount of documentation preamble to read, but once you follow the
+prompts, you'll be asked to choose an app name and the Slack team that "owns"
+this app, after which you'll be given your app _credentials_ -- a 'Client ID'
+and a 'Client Secret'. You'll need these to configure your app properly.
 
-Depending on what your own app plans to do, of course, you may need other scopes
-too.
+#### OAuth setup
+
+Still on the Slack site, you'll also need to set up your app for OAuth in order
+to be able to use the 'Add to Slack' button later. Click on 'OAuth & Permissions'
+in the sidebar, and then enter the urls your application runs at as valid
+'Redirect URLs'.
+
+You only really need to include the start of the URL, since a
+partial match is fine. For example, for [Harmonia][harmonia] I have two URLs:
+
+* https://harmonia.io
+* http://harmonia.dev
+
+These are the URLs for the production service, and the URL I use locally, which
+lets me test things out without deploying them. The actual URL includes a longer
+path component, but you don't need to include this here.
+
+#### Add to Slack button
+
+Here's the general form of an 'Add to Slack' button:
+
+    <a href="https://slack.com/oauth/authorize?scope=SCOPES&client_id=CLIENT_ID.CLIENT_SECRET&redirect_uri=REDIRECT_URI">
+      <img alt="Add to Slack" height="40" width="139"
+           src="https://platform.slack-edge.com/img/add_to_slack.png"
+           srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x">
+    </a>
+
+Slack may change this; you can check https://api.slack.com/docs/slack-button for
+their button builder if necessary.
+
+You should replace `CLIENT_ID` and `CLIENT_SECRET` with the values you were given
+when you created the app on Slack's site. `SCOPES` should be something like
+`bot,team:read` (see Slack's API documentation for what these and other scopes
+mean).
+
+The `REDIRECT_URI` should be the URI to an endpoint in _your_ app where
+you will intercept the Oauth request.
+
+### OAuth endpoints in your app
+
+It's worthwhile understanding a little about OAuth; Slack provides some good
+background here: https://api.slack.com/docs/oauth
+
+For the sake of this example, let's assume you're using Rails. Here's what a
+simple OAuth setup might look like, approximately:
+
+In `config/routes.rb`:
+
+    get '/slack_oauth', as: 'slack_oauth', to: 'slack_controller#oauth'
+
+In `app/controllers/slack_controller.rb`:
+
+    class SlackController < ApplicationController
+      def oauth
+        if params['code']
+          slack_client = Slack::Web::Client.new
+          response = slack_client.oauth_access(
+            code: params['code'],
+            client_id: ENV['SLACK_CLIENT_ID'],
+            client_secret: ENV['SLACK_CLIENT_SECRET'],
+            redirect_uri: slack_oauth_url(account_id: current_account.id)
+          )
+          if response['ok']
+            # the response object will now contain the access tokens you
+            # need; something like
+            #  {
+            #   "access_token": "xoxp-XXXXXXXX-XXXXXXXX-XXXXX",
+            #   "scope": "bot,team:read",
+            #   "team_name": "Team Installing Your Bot",
+            #   "team_id": "XXXXXXXXXX",
+            #   "bot":{
+            #       "bot_user_id":"UTTTTTTTTTTR",
+            #       "bot_access_token":"xoxb-XXXXXXXXXXXX-TTTTTTTTTTTTTT"
+            #   }
+            # }
+            # At the very least you should store the `bot_access_token` and
+            # probably the `access_token` too.
+            SlackIntegration.create(
+              account_id: params['account_id'],
+              access_token: response['access_token'],
+              bot_access_token: response['bot']['bot_access_token']
+            )
+          else
+            # there was a failure; check in the response
+          end
+        else
+          redirect_to '/' # they cancelled adding the integration
+        end
+      end
+    end
+
+Here our controller responds to a request from Slack with a code, and uses that
+code to obtain access tokens for the user's slack team.
+
+You'll almost certainly want to associate the created `SlackIntegration` with
+another model (e.g. an account, user or team) in your own application; I've done
+this here by including the `account_id` in the redirect_uri that we send back
+to Slack.
+
+In `app/models/slack_integration.rb`:
+
+    # Assumes a table including `access_token` and `bot_access_token` as
+    # strings
+    require 'slack_bot_server/remote_control'
+
+    class SlackIntegration < ActiveRecord::Base
+      after_create :add_to_slack_server
+
+      private
+
+      def add_to_slack_server
+        queue = SlackBotServer::RedisQueue.new(redis: Redis.new)
+        slack_remote = SlackBotServer::RemoteControl.new(queue: queue)
+        slack_remote.add_bot(self.bot_access_token)
+      end
+    end
+
+For more explanation about that last method, read on...
 
 ### Managing bots
 
@@ -230,3 +348,5 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/exciti
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+
+[harmonia]: https://harmonia.io
