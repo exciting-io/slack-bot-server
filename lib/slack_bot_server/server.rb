@@ -83,7 +83,7 @@ class SlackBotServer::Server
         begin
           bot.start
         rescue => e
-          log_error(e)
+          log_error(e, "attempting to start bot #{bot.key}")
         end
       end
       listen_for_instructions if queue
@@ -114,7 +114,7 @@ class SlackBotServer::Server
       bot.start if @running
     end
   rescue => e
-    log_error(e)
+    log_error(e, "Attempting to add bot", *args)
   end
 
   # Stops and removes a bot from the server
@@ -126,7 +126,7 @@ class SlackBotServer::Server
       @bots.delete(key)
     end
   rescue => e
-    log_error(e)
+    log_error(e, "Attempting to remove bot with key #{key}")
   end
 
   private
@@ -137,7 +137,7 @@ class SlackBotServer::Server
         next_message = queue.pop
         process_instruction(next_message) if next_message
       rescue => e
-        log_error(e)
+        log_error(e, "error handling instructions")
       end
     end
   end
@@ -172,7 +172,7 @@ class SlackBotServer::Server
       end
     end
   rescue => e
-    log "Error processing instruction: #{instruction.inspect}"
+    log_error(e, "Error processing instruction: #{instruction.inspect}")
     raise e
   end
 

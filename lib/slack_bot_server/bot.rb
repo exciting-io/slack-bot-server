@@ -164,7 +164,7 @@ class SlackBotServer::Bot
         @last_received_user_message = data if user_message?(data)
         handle_message(data)
       rescue => e
-        log_error e
+        log_error e, "Error handling message #{data.inspect}"
       end
     end
 
@@ -178,6 +178,7 @@ class SlackBotServer::Bot
 
     client.start_async
   rescue Slack::Web::Api::Error => e
+    log "Connection error for bot #{key}"
     raise ConnectionError.new(e.message, e.response)
   end
 
