@@ -400,7 +400,7 @@ class SlackBotServer::Bot
   end
 
   def user_message?(data)
-    !bot_message?(data) && data.subtype.nil?
+    !bot_message?(data) && (data.subtype.nil? || ['file_share'].include?(data.subtype))
   end
 
   def rtm_incompatible_message?(data)
