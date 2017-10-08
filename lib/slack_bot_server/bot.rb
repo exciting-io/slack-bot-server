@@ -161,7 +161,7 @@ class SlackBotServer::Bot
     client.on :message do |data|
       begin
         debug message: data
-        @last_received_user_message = data if user_message?(data)
+        @last_received_user_message = data
         handle_message(data)
       rescue => e
         log_error e, "Error handling message #{data.inspect}"
