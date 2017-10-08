@@ -163,6 +163,10 @@ class SlackBotServer::Server
           user_id, message_data = args
           log "[#{bot_key}] say_to: (#{user_id}) #{message_data}"
           bot.say_to(user_id, message_data)
+        when :update
+          message_data = args
+          log "[#{bot_key}] update: #{message_data}"
+          bot.update(message_data)
         when :call
           method, method_args = args
           bot.call(method, method_args)

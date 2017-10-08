@@ -100,6 +100,17 @@ class SlackBotServer::Bot
     end
   end
 
+  # Update a message on Slack
+  # @param options [Hash] a hash containing any of the following:
+  #    message_ts:: The timestamp of the original_message you want to update
+  #    text:: the actual text of the message
+  def update(options)
+    message = symbolize_keys(options)
+
+    debug "Sending via Web API", message
+    client.web_client.chat_update(message)
+  end
+
   # Sends a message to every channel this bot is a member of
   # @param options [Hash] As {#say}, although the +:channel+ option is
   #   redundant
@@ -137,10 +148,14 @@ class SlackBotServer::Bot
     client.typing(default_options.merge(options))
   end
 
+  # Call a method directly in this instance
+  def call(method, args)
+    send(method, *args)
+  end
+
   # Call a method directly on the Slack web API (via Slack::Web::Client).
   # Useful for debugging only.
-  def call(method, args)
-    args.symbolize_keys!
+  def slack_call(method, args)
     client.web_client.send(method, args)
   end
 

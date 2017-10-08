@@ -49,12 +49,20 @@ class SlackBotServer::RemoteControl
     @queue.push([:say_to, key, user_id, message_data])
   end
 
+  # Sends an +update+ command to the {SlackBotServer::Server server}.
+  # @param key [String] the key of the bot which should send the message.
+  # @param message_data [Hash] passed directly to
+  #    {SlackBotServer::Bot#update}; see there for argument details.
+  def update(key, message_data)
+    @queue.push([:update, key, message_data])
+  end
+
   # Sends a message to be called directly on the slack web API. Generally
   # for debugging only.
   # @param key [String] the key of the bot which should send the message.
   # @param method [String, Symbol] the name of the method to call
   # @param args [Array] the arguments for the method to call
   def call(key, method, args)
-    @queue.push([:call, [key, method, args]])
+    @queue.push([:call, key, method, args])
   end
 end
