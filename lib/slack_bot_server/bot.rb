@@ -315,7 +315,8 @@ class SlackBotServer::Bot
         debug on_message: data, bot_message: bot_message?(data)
         if !bot_message?(data) &&
            (data.text =~ /\A(#{mention_keywords.join('|')})[\s\:](.*)/i ||
-            data.text =~ /\A(<@#{bot_user_id}>)[\s\:](.*)/)
+            data.text =~ /\A(<@#{bot_user_id}>)[\s\:](.*)/) &&
+            user_message?(data)
           message = $2.strip
           @last_received_user_message.merge!(message: message)
           instance_exec(@last_received_user_message, &block)
