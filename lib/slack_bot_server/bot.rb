@@ -328,7 +328,19 @@ class SlackBotServer::Bot
     def on_im(&block)
       on(:message) do |data|
         debug on_im: data, bot_message: bot_message?(data), is_im_channel: is_im_channel?(data.channel)
-        if !bot_message?(data) && is_im_channel?(data.channel)
+        if !bot_message?(data) && is_im_channel?(data.channel) && user_message?(data)
+          @last_received_user_message.merge!(message: data.text)
+          instance_exec(@last_received_user_message, &block)
+        end
+      end
+    end
+
+    # Define a callback to run when any a user sends a file in direct message
+    # to this bot
+    def on_file(&block)
+      on(:message) do |data|
+        debug on_file: data, bot_message: bot_message?(data), is_im_channel: is_im_channel?(data.channel)
+        if !bot_message?(data) && is_im_channel?(data.channel) && file_message?(data)
           @last_received_user_message.merge!(message: data.text)
           instance_exec(@last_received_user_message, &block)
         end
@@ -400,7 +412,11 @@ class SlackBotServer::Bot
   end
 
   def user_message?(data)
-    !bot_message?(data) && (data.subtype.nil? || ['file_share'].include?(data.subtype))
+    !bot_message?(data) && data.subtype.nil?
+  end
+
+  def file_message?(data)
+    !bot_message?(data) && data.subtype == 'file_share'
   end
 
   def rtm_incompatible_message?(data)
