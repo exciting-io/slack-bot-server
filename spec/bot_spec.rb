@@ -357,6 +357,36 @@ RSpec.describe SlackBotServer::Bot do
       end
     end
 
+    describe 'on_file' do
+      let(:channel_id) { 'im123' }
+      let(:im_list) { [{'id' => channel_id, 'is_im' => true}] }
+
+      before do
+        instance_check = check
+        allow(check).to receive(:call)
+        bot_instance do
+          on_file do |message|
+            instance_check.call(message)
+          end
+        end
+      end
+
+      it 'invokes on_file block if the message is a file' do
+        expect(check).to receive(:call)
+        send_message('channel' => channel_id, 'subtype' => 'file_share')
+      end
+
+      it 'does not invoke the block if the message is from SlackBot' do
+        expect(check).not_to receive(:call)
+        send_message('channel' => channel_id, 'subtype' => 'file_share', 'user' => SlackBotServer::Bot::SLACKBOT_USER_ID)
+      end
+
+      it 'does not invoke block for messages to non-IM channels bot is in' do
+        expect(check).not_to receive(:call)
+        send_message('channel' => 'other123', 'subtype' => 'file_share')
+      end
+    end
+
     context 'on_slack_event' do
       it 'registers the callback with the underlying slack client' do
         instance_check = check
