@@ -41,10 +41,17 @@ RSpec.describe SlackBotServer::RemoteControl do
     end
   end
 
+  describe "#update" do
+    it "pushes a 'update' command onto the queue with the given key and message data" do
+      expect(queue).to receive(:push).with([:update, key, {text: 'hello'}])
+      subject.update(key, text: 'hello')
+    end
+  end
+
   describe "#call" do
     it "pushes a 'call' command onto the queue with the given arguments, for the bot with the given key" do
       args = [1, 2, 3]
-      expect(queue).to receive(:push).with([:call, [key, :method_name, args]])
+      expect(queue).to receive(:push).with([:call, key, :method_name, args])
       subject.call(key, :method_name, args)
     end
   end
