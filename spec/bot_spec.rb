@@ -112,6 +112,27 @@ RSpec.describe SlackBotServer::Bot do
     end
   end
 
+  context 'handling pingbacks' do
+    let(:bot) { bot_instance }
+    let(:dummy_message) { OpenStruct.new(channel: '#general', message: OpenStruct.new(ts: '12345.678')) }
+
+    before do
+      allow(slack_web_api).to receive(:chat_postMessage).and_return(dummy_message)
+    end
+
+    it "does nothing if no pingback option was given" do
+      expect(bot).not_to receive(:handle_pingback)
+
+      bot.say(text: 'hello', channel: '#general')
+    end
+
+    it "calls store_pingback with the channel, ts and target parameters if a pingback was given" do
+      expect(bot).to receive(:handle_pingback).with(channel: '#general', ts: '12345.678', target: 'target-identifier')
+
+      bot.say(text: 'hello', channel: '#general', pingback: 'target-identifier')
+    end
+  end
+
   context "RTM messaging" do
     let(:bot) { bot_instance }
 

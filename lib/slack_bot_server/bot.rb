@@ -90,14 +90,21 @@ class SlackBotServer::Bot
   #               class definition
   def say(options)
     message = symbolize_keys(default_message_options.merge(options))
+    pingback_target = message.delete(:pingback)
 
-    if rtm_incompatible_message?(message)
+    result = if rtm_incompatible_message?(message)
       debug "Sending via Web API", message
       client.web_client.chat_postMessage(message)
     else
       debug "Sending via RTM API", message
       client.message(message)
     end
+
+    if pingback_target
+      handle_pingback(channel: result.channel, ts: result.message.ts, target: pingback_target)
+    end
+
+    result
   end
 
   # Update a message on Slack
@@ -398,6 +405,10 @@ class SlackBotServer::Bot
       response = instance_exec(data, &c)
       break if response == false
     end
+  end
+
+  def handle_pingback(channel:, ts:, target:)
+    # leave subclasses to implement this
   end
 
   def register_low_level_callbacks
