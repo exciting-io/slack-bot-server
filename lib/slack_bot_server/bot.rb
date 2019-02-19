@@ -102,7 +102,8 @@ class SlackBotServer::Bot
 
   # Update a message on Slack
   # @param options [Hash] a hash containing any of the following:
-  #    message_ts:: The timestamp of the original_message you want to update
+  #    ts:: The timestamp of the original_message you want to update
+  #    channel:: The channel ID of the message to update
   #    text:: the actual text of the message
   def update(options)
     message = symbolize_keys(options)

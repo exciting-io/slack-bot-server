@@ -406,9 +406,9 @@ RSpec.describe SlackBotServer::Bot do
     let(:bot) { bot_instance }
 
     it "update a message" do
-      expect(slack_web_api).to receive(:chat_update).with(hash_including(text: 'hello', original_message: { text: 'hello!' }))
+      expect(slack_web_api).to receive(:chat_update).with(hash_including(ts: '1234.567', text: 'new text', channel: '#general'))
 
-      bot.update text: 'hello', username: 'Bot', original_message: { text: "hello!" }
+      bot.update ts: '1234.567', text: 'new text', channel: '#general'
     end
 
   end

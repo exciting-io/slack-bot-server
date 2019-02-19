@@ -66,6 +66,16 @@ RSpec.describe SlackBotServer::Server do
       end
     end
 
+    describe "updating a message" do
+      it "calls update on the bot instance matching the given key with the message data" do
+        bot = double('bot')
+        allow(server).to receive(:bot).with('bot-key').and_return(bot)
+        expect(bot).to receive(:update).with('text' => 'hello')
+        enqueue_instruction :update, 'bot-key', text: 'hello'
+        run_server
+      end
+    end
+
     describe "calling an arbitrary method on a bot" do
       it "calls 'call' on the bot" do
         bot = double('bot')
