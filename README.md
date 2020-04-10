@@ -1,5 +1,9 @@
 # SlackBotServer
 
+**This project is no longer being maintained**
+
+The Slack RTM API and bot mechanisms have changed quite a bit since this project was started, and it no longer fills a need we have.
+
 [![Build Status](https://travis-ci.org/exciting-io/slack-bot-server.svg)](https://travis-ci.org/exciting-io/slack-bot-server) [![Documentation](http://img.shields.io/badge/yard-docs-blue.svg)](http://www.rubydoc.info/github/exciting-io/slack-bot-server)
 
 If you're building an integration just for yourself, running a single bot isn't too hard and there are plenty of examples available. However, if you're building an integration for your *product* to connect with multiple teams, running multiple instances of that bot is a bit trickier.
